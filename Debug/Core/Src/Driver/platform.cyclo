@@ -1,8 +1,0 @@
-D:/ST/CubeWorkspace/RookProject/Core/CMSIS/Include/core_cm4.h:1816:22:__NVIC_SetPriority	2
-D:/ST/CubeWorkspace/RookProject/Core/CMSIS/Include/core_cm4.h:2022:26:SysTick_Config	2
-../Core/Src/Driver/platform.c:14:6:init_platform	1
-../Core/Src/Driver/platform.c:20:6:delay_ms	2
-../Core/Src/Driver/platform.c:31:10:get_sysTicks	1
-../Core/Src/Driver/platform.c:37:13:init_clock	1
-../Core/Src/Driver/platform.c:42:13:init_systick	1
-../Core/Src/Driver/platform.c:47:6:SysTick_Handler	1
