@@ -1,5 +1,6 @@
 .vscode/
 .settings/
+.pio/
 Debug/
 RookProject Debug.cfg
 RookProject Debug.launch
