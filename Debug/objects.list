@@ -1,0 +1,5 @@
+"./Core/Src/Driver/gpio.o"
+"./Core/Src/Driver/platform.o"
+"./Core/Src/Driver/uart.o"
+"./Core/Src/main.o"
+"./Core/Startup/startup_stm32f411vetx.o"

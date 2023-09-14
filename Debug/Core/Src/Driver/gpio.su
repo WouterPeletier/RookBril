@@ -1,0 +1,6 @@
+../Core/Src/Driver/gpio.c:7:6:gpio_write	16	static
+../Core/Src/Driver/gpio.c:24:6:gpio_toggle	16	static
+../Core/Src/Driver/gpio.c:34:9:gpio_read	16	static
+../Core/Src/Driver/gpio.c:42:6:gpio_configure_pin	32	static
+../Core/Src/Driver/gpio.c:88:6:init_gpio_options	24	static
+../Core/Src/Driver/gpio.c:100:6:init_gpio	32	static
