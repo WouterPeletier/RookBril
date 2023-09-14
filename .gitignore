@@ -1,4 +1,5 @@
-.vscode
-.settings
-.Debug
-
+.vscode/
+.settings/
+.Debug/
+RookProject Debug.cfg
+RookProject Debug.launch
