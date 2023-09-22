@@ -20,7 +20,7 @@ int main(void)
 
 	init_platform();
 	init_pwm(25, 1000);
-	set_interrupt(GPIOA, GPIO_4, INT_FALLING_EDGE);
+	set_interrupt(GPIOA, GPIO_3, INT_FALLING_EDGE);
 	
 	/* Adafruit implementation of ac output */
 	init_gpio(GPIOD, GPIO_15, GPIO_MODER_OUTPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
