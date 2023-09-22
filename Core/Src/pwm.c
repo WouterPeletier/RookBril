@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stm32f4xx.h>
-
+//CommentOmTeTesten
 #include "platform.h"
 #include "gpio.h"
 
