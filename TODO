@@ -1,0 +1,6 @@
+- Schrijf IR RX code
+
+- Ondezoek welk AC signaal beter is. (mijn timer ac signaal of adafruit ac signaal)
+
+- Fix the clock generation function
+    - zorg dat die functie een klok van 16-48MHZ kan maken, precieze frequentie maakt niet zo veel uit
