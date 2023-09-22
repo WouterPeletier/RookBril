@@ -32,7 +32,7 @@ void EXTI0_IRQHandler(void)
         printf("Interrupt");
         #endif
 
-        
+        //verbetering
 		update_dutycycle(0);
     }
     EXTI->PR |= 1;
