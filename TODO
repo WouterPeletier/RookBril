@@ -1,4 +1,5 @@
 - Schrijf IR RX code
+	- Correct protocol kiezen en code schrijven met behulp van EXTI en TIMx
 
 - Ondezoek welk AC signaal beter is. (mijn timer ac signaal of adafruit ac signaal)
 
