@@ -5,6 +5,7 @@
 #include "platform.h"
 #include "gpio.h"
 #include "pwm.h"
+#include "interrupts.h"
 
 #ifdef SEMIHOSTING
 /* Semihosting */
@@ -19,6 +20,7 @@ int main(void)
 
 	init_platform();
 	init_pwm(25, 1000);
+	set_interrupt(GPIOA, GPIO_4, INT_FALLING_EDGE);
 	
 	/* Adafruit implementation of ac output */
 	init_gpio(GPIOD, GPIO_15, GPIO_MODER_OUTPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
@@ -32,7 +34,9 @@ int main(void)
 	//printf("Done\n");
 	while(1)
 	{
-		for (int i = 1; i<40; i++)
+		update_dutycycle(1);
+		delay_ms(2000);
+		for (int i = 1; i<25; i++)
 		{
 
 			delay_ms(100);
@@ -42,6 +46,8 @@ int main(void)
 			#endif
 		
 		}
+		
+		delay_ms(2000);
 	}
 
 }

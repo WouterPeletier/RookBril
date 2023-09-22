@@ -7,7 +7,7 @@
 
 void init_pwm(uint16_t dutycycle, uint32_t frequency)
 {
-    if(dutycycle >= 49) dutycycle = 49;
+    if(dutycycle > 50) dutycycle = 50;
     
     uint16_t prescal = 0;
     uint16_t autoreload = (F_CPU/(2*frequency*(prescal+1)))-1;
@@ -34,7 +34,6 @@ void init_pwm(uint16_t dutycycle, uint32_t frequency)
     /* center aligned, mode 3: Output compare interrupt flags set when counting up and down */
     TIM3->CR1 |= (3<<TIM_CR1_CMS_Pos); 
 
-
     //CCR1:     2 CCR2: 4 ARR:6
     //CNT:      0 1 2 3 4 5 6 5 4 3 2 1 0 1 2 3 4 5 6 5
     //OC1:      1 1 0 0 0 0 0 0 0 0 0 1 1 1 0 0 0 0 0 0   
@@ -54,6 +53,9 @@ void init_pwm(uint16_t dutycycle, uint32_t frequency)
     init_gpio(GPIOA, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
     init_gpio(GPIOA, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
+    /* invert 1 of the timer outputs */
+    TIM3->CCER |= TIM_CCER_CC2P;
+    TIM3->CCER |= TIM_CCER_CC1P;
     /* Connect timer output to gpio output*/
     TIM3->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC1E);
     /* Enable timer */

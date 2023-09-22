@@ -76,7 +76,6 @@ static void init_clock(void)
 
 static void init_clock_hse(void)
 {
-	
 	/* Init HSE clk */
 	RCC->CR |= RCC_CR_HSEON;
 	while (!(RCC->CR & RCC_CR_HSERDY)) {	}
@@ -94,6 +93,7 @@ static void init_systick(void)
 {
 	SysTick_Config(F_CPU/1000);		// every ms	//10MHz???? wtf
 }
+
 /* Systick handler runs every ms */
 uint32_t kanIkTellen = 0;
 void SysTick_Handler(void)
