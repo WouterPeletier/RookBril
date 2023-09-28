@@ -5,7 +5,7 @@
 #include "platform.h"
 #include "gpio.h"
 
-void init_pwm(uint16_t dutycycle, uint32_t frequency)
+void init_pwm(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency, GPIO_TypeDef* Port, uint8_t pin)
 {
     if(dutycycle > 50) dutycycle = 50;
     
@@ -25,51 +25,64 @@ void init_pwm(uint16_t dutycycle, uint32_t frequency)
     printf("Debug: PSC: %d\tARR: %d\tCCR1: %d\tCCR2: %d\r\n", prescal, autoreload, ccr1, ccr2);
 
     #endif
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-    TIM3->PSC = prescal;
-    TIM3->ARR = autoreload;
-    TIM3->CCR1 = ccr1;
-    TIM3->CCR2 = ccr2;
-    
-    /* center aligned, mode 3: Output compare interrupt flags set when counting up and down */
-    TIM3->CR1 |= (3<<TIM_CR1_CMS_Pos); 
+    if(TIMx == TIM2) {
+    	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    } else if(TIMx == TIM3) {
+    	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+    } else if(TIMx == TIM4) {
+    	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+    } else if(TIMx == TIM5) {
+    	RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+    }
+    TIMx->PSC = prescal;
+    TIMx->ARR = autoreload;
+    TIMx->CCR1 = ccr1;
+    TIMx->CCR2 = ccr2;
 
-    //CCR1:     2 CCR2: 4 ARR:6
-    //CNT:      0 1 2 3 4 5 6 5 4 3 2 1 0 1 2 3 4 5 6 5
-    //OC1:      1 1 0 0 0 0 0 0 0 0 0 1 1 1 0 0 0 0 0 0   
-    //OC2:      0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 1 1 1
-    //
-    //This creates a sine wave
+    /* center aligned, mode 3: Output compare interrupt flags set when counting up and down */
+    TIMx->CR1 |= (3<<TIM_CR1_CMS_Pos);
 
     /* Output 1 is active when CNT<CCR1 */
-    TIM3->CCMR1 |= (0b110<<TIM_CCMR1_OC1M_Pos);
+    TIMx->CCMR1 |= (0b110<<TIM_CCMR1_OC1M_Pos);
     /* Output 2 is active when CNT>CCR2 */
-    TIM3->CCMR1 |= (0b111<<TIM_CCMR1_OC2M_Pos);
-
-    /* Tim3_CH1 PA6 */
-    /* Tim3_CH2 PA7 */
+    TIMx->CCMR1 |= (0b111<<TIM_CCMR1_OC2M_Pos);
 
     /* enable GPIO outputs */
+//    init_gpio(Port, pin, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+
     init_gpio(GPIOA, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
     init_gpio(GPIOA, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
-    /* invert 1 of the timer outputs */
-    TIM3->CCER |= TIM_CCER_CC2P;
-    TIM3->CCER |= TIM_CCER_CC1P;
-    /* Connect timer output to gpio output*/
-    TIM3->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC1E);
-    /* Enable timer */
-    TIM3->CR1 |= TIM_CR1_CEN;
 
+    /* invert 1 of the timer outputs */
+    TIMx->CCER |= TIM_CCER_CC2P;
+    TIMx->CCER |= TIM_CCER_CC1P;
+    /* Connect timer output to gpio output*/
+    TIMx->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC1E);
+
+    TIMx->CR1 ^= TIM_CR1_CEN;
 }
 
-void update_dutycycle(uint32_t dutycycle)
+void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle)
 {
-    uint32_t autoreload = TIM3->ARR;
+    uint32_t autoreload = TIMx->ARR;
     uint16_t ccr1 = (dutycycle*autoreload)/100;
     uint16_t ccr2 = autoreload - ccr1;
 
     
-    TIM3->CCR1 = ccr1;
-    TIM3->CCR2 = ccr2;
+    TIMx->CCR1 = ccr1;
+    TIMx->CCR2 = ccr2;
+}
+
+void togglePWM(TIM_TypeDef* TIMx) {
+	/* Enable timer */
+	TIMx->CR1 ^= TIM_CR1_CEN;
+}
+
+void switchPWM(TIM_TypeDef* TIMx, uint8_t HL) {
+	if(HL == 0) {
+		TIMx->CR1 &= ~TIM_CR1_CEN;
+	} else if(HL == 1) {
+		TIMx->CR1 |= TIM_CR1_CEN;
+	}
 }
