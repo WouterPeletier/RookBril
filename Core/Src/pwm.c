@@ -5,15 +5,14 @@
 #include "platform.h"
 #include "gpio.h"
 
-void init_pwm(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency, GPIO_TypeDef* Port, uint8_t pin)
+void initTIM(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency)
 {
-    if(dutycycle > 50) dutycycle = 50;
+    if(dutycycle > 100) dutycycle = 50;
     
     uint16_t prescal = 0;
     uint16_t autoreload = (F_CPU/(2*frequency*(prescal+1)))-1;
     uint16_t ccr1 = (dutycycle*autoreload)/100;
     uint16_t ccr2 = autoreload - ccr1;
-    
     
     #ifdef SEMIHOSTING
     printf("initialising PWM\r\n");
@@ -46,21 +45,6 @@ void init_pwm(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency, GPIO_Ty
     TIMx->CCMR1 |= (0b110<<TIM_CCMR1_OC1M_Pos);
     /* Output 2 is active when CNT>CCR2 */
     TIMx->CCMR1 |= (0b111<<TIM_CCMR1_OC2M_Pos);
-
-    /* enable GPIO outputs */
-//    init_gpio(Port, pin, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
-
-    init_gpio(GPIOA, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
-    init_gpio(GPIOA, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
-
-
-    /* invert 1 of the timer outputs */
-    TIMx->CCER |= TIM_CCER_CC2P;
-    TIMx->CCER |= TIM_CCER_CC1P;
-    /* Connect timer output to gpio output*/
-    TIMx->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC1E);
-
-    TIMx->CR1 ^= TIM_CR1_CEN;
 }
 
 void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle)
@@ -69,7 +53,6 @@ void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle)
     uint16_t ccr1 = (dutycycle*autoreload)/100;
     uint16_t ccr2 = autoreload - ccr1;
 
-    
     TIMx->CCR1 = ccr1;
     TIMx->CCR2 = ccr2;
 }
@@ -85,4 +68,11 @@ void switchPWM(TIM_TypeDef* TIMx, uint8_t HL) {
 	} else if(HL == 1) {
 		TIMx->CR1 |= TIM_CR1_CEN;
 	}
+}
+
+void initPWM(GPIO_TypeDef* Port, uint8_t pin, TIM_TypeDef* TIMx) {
+    /* Initialize GPIO with correct function*/
+	init_gpio(Port, pin, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    /* Connect timer output to gpio output*/
+    TIMx->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC1E);
 }
