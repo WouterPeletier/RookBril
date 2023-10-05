@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stm32f4xx.h>
 
 void initTIM(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency);
 void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle);

@@ -9,40 +9,31 @@
 #include "interrupts.h"
 #include "IR.h"
 
+#define Receiving
 #define Address = 1; //Address tussen 0 en 32
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
 uint32_t bitCycles = 4800; //De tijd van de bit in clock cycles = 600us/(1/F_CPU (8000000))
 uint32_t sendIntervalms = 1000; //De tijd in ms hoelang het duurt tot de volgende IR send command
+bool sendFlag = false;
 
-int main(void)
-{
+int main(void) {
 	IRMsg->IRAddress = 1;
 
 	init_platform();
-	initTIM(TIM3, 25, 1000);
-	initPWM(GPIOA, GPIO_7, TIM3);
-	switchPWM(TIM3, 1);
-//	togglePWM(TIM3);
-	update_dutycycle(TIM3, 50);
+	IRInit(0b00110, Send, GPIOA, GPIO_6);
+	IRSend(0b011010);
 	while(1){}
 	//printf("Done\n");
 	while(1)
 	{
-		update_dutycycle(TIM3, 1);
-		delay_ms(2000);
-		for (int i = 1; i<25; i++)
-		{
-			delay_ms(100);
-			update_dutycycle(TIM3, i);
-		}
-		
- 		delay_ms(2000);
+		sendIR(&IRMsg);
 	}
 }
 
-void InitIR(uint8_t address, IRMode mode) {
-	init_pwm(TIM3, 50, 38000, GPIOA, GPIO_6);
+void Systick_Handler() {
+
 }
+
 

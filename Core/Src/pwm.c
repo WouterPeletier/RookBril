@@ -1,12 +1,10 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stm32f4xx.h>
 //CommentOmTeTesten
 #include "platform.h"
 #include "gpio.h"
 
-void initTIM(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency)
-{
+void initTIM(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency) {
     if(dutycycle > 100) dutycycle = 50;
     
     uint16_t prescal = 0;
@@ -42,13 +40,11 @@ void initTIM(TIM_TypeDef* TIMx, uint16_t dutycycle, uint32_t frequency)
     TIMx->CR1 |= (3<<TIM_CR1_CMS_Pos);
 
     /* Output 1 is active when CNT<CCR1 */
-    TIMx->CCMR1 |= (0b110<<TIM_CCMR1_OC1M_Pos);
-    /* Output 2 is active when CNT>CCR2 */
-    TIMx->CCMR1 |= (0b111<<TIM_CCMR1_OC2M_Pos);
+    TIMx->CCMR1 |= TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2;
+    TIMx->CCER |= TIM_CCER_CC1E;
 }
 
-void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle)
-{
+void update_dutycycle(TIM_TypeDef* TIMx, uint32_t dutycycle) {
     uint32_t autoreload = TIMx->ARR;
     uint16_t ccr1 = (dutycycle*autoreload)/100;
     uint16_t ccr2 = autoreload - ccr1;
