@@ -89,6 +89,8 @@ void EXTI0_IRQHandler(void)
         //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
         EXTI->IMR &= 0<<0; //Disable this interrupt
         start = true;  //Reset start flag
+        NVIC_EnableIRQ(TIM4_IRQn);
+        TIM4->CNT = 0;
         switchPWM(TIM4, 1); //Start timer TIM4
     }
 
@@ -97,9 +99,10 @@ void EXTI0_IRQHandler(void)
 
 void TIM4_IRQHandler(void) 
 {
-    DEBUGLOG("Got to TIM4 interrupt\r\n");
+    //DEBUGLOG("Got to TIM4 interrupt\r\n");
+    TIM4->SR &= ~TIM_SR_UIF;
     TIM4->ARR = lowDuration * 2;
-    message[bitIndex] = gpio_read(GPIOD, GPIO_3);
+    message[bitIndex] = gpio_read(GPIOD, GPIO_0);
     bitIndex++;
     if(bitIndex == messageLength)
     {
