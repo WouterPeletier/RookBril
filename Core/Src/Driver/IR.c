@@ -14,6 +14,6 @@
 void receive()
 {  
     DEBUGLOG("Receive function called\r\n");
-    initTIM(TIM4, 50, 1000000);
+    initTIMIRR(50, 38000);
     set_interrupt(GPIOD, GPIO_0, INT_ALL_EDGE);  //MOET pin 0 zijn voor EXTI 0. Pin nummer = EXTI nummer
 }
