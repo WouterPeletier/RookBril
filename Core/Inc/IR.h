@@ -19,5 +19,5 @@ typedef struct _IRPacket{
 	uint8_t IRData;
 } IRPacket;
 
-void IRInit(uint8_t address, IRMode mode, GPIO_TypeDef* Port, uint8_t pin);
+void IRInit(uint8_t address, IRMode mode);
 void IRSend(uint8_t data);

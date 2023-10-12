@@ -22,13 +22,14 @@ int main(void) {
 	IRMsg->IRAddress = 1;
 
 	init_platform();
-	IRInit(0b00110, Send, GPIOA, GPIO_6);
+	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+	gpio_toggle(GPIOA, GPIO_0);
+	initTIMIRS(50, 38000);
+	IRInit(0b00110, Send);
+	for(volatile uint32_t j = 0; j<400000; j++) {
+	}
 	IRSend(0b011010);
-	while(1){}
-	//printf("Done\n");
-	while(1)
-	{
-		sendIR(&IRMsg);
+	while(1){
 	}
 }
 
