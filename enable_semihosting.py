@@ -1,4 +1,4 @@
-Import ("env")
+Import("env")
 
 env.Append(
     LINKFLAGS=["--specs=rdimon.specs"],
