@@ -34,24 +34,24 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     EXTI->RTSR |= !!(edgeRate & 0b01);  //rising edge
     EXTI->FTSR |= !!(edgeRate & 0b10); //falling 
     
-    SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
-    // if(port == GPIOA) // Only works for pin 0
-    // {
-    //     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PA;
-    //     DEBUGLOG("EXTI line 0 set to use port A\r\n");
-    // }else if(port == GPIOB)
-    // {
-    //     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB;
-    //     DEBUGLOG("EXTI line 0 set to use port B\r\n");
-    // }else if(port == GPIOC)
-    // {
-    //     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC;
-    //     DEBUGLOG("EXTI line 0 set to use port C\r\n");
-    // }else if(port == GPIOD)
-    // {
-    //     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
-    //     DEBUGLOG("EXTI line 0 set to use port D\r\n");
-    // }
+    // SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
+    if(port == GPIOA) // Only works for pin 0
+    {
+        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PA;
+        DEBUGLOG("EXTI line 0 set to use port A\r\n");
+    }else if(port == GPIOB)
+    {
+        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB;
+        DEBUGLOG("EXTI line 0 set to use port B\r\n");
+    }else if(port == GPIOC)
+    {
+        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC;
+        DEBUGLOG("EXTI line 0 set to use port C\r\n");
+    }else if(port == GPIOD)
+    {
+        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
+        DEBUGLOG("EXTI line 0 set to use port D\r\n");
+    }
 
     EXTI->PR |= EXTI_PR_PR0;
 
@@ -83,7 +83,7 @@ void EXTI0_IRQHandler(void)
         //DEBUGLOG("Detected rising edge\r\n");
         switchPWM(TIM4, 0); //Stop timer
         lowDuration = TIM4->CNT; //Capture lowDuration
-        DEBUGLOG("LowDuration: %d", lowDuration);
+
         TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
         TIM4->ARR = lowDuration * 1.5;  //Auto reload is 3/4 bitTime
         //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
