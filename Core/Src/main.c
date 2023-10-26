@@ -38,6 +38,8 @@ int main(void)
 
     init_platform();
     DEBUGLOG("Platform Initiated\r\n");
+    GPIOD->MODER |= GPIO_MODER_MODER11_0 | GPIO_MODER_MODER12_0 | GPIO_MODER_MODER13_0 | GPIO_MODER_MODER14_0;
+    GPIOD->ODR |= GPIO_ODR_OD12 | GPIO_ODR_OD11;
 
     receive();
 
@@ -45,38 +47,6 @@ int main(void)
     {
         __WFI();
     }
-
-    // while(1)
-    // {
-    //     int test = gpio_read(GPIOD, GPIO_0);
-    //     printf("Read value: %d", test);
-    //     //__WFI();
-    // }
-    // IRMsg->IRAddress = 1;
-
-    
-    // initTIM(TIM3, 25, 1000);
-    // initPWM(GPIOA, GPIO_7, TIM3);
-    // switchPWM(TIM3, 1);
-    // togglePWM(TIM3);
-    // update_dutycycle(TIM3, 50);
-    // while(1){}
-    // printf("Done\n");
-    // while(1)
-    // {
-    //     printf("Running");
-    //     update_dutycycle(TIM3, 1);
-    //     delay_ms(2000);
-    //     for (int i = 1; i<25; i++)
-    //     {
-    //         delay_ms(100);
-    //         update_dutycycle(TIM3, i);
-    //     }
-    //     int test = gpio_read(GPIOD, GPIO_0);
-    //     printf("Read value: %d", test);
-    //     delay_ms(2000);
-    // }
-    
 }
 
 void InitIR(uint8_t address, IRMode mode) 

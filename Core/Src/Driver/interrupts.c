@@ -68,11 +68,23 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 
 void EXTI0_IRQHandler(void)
 {
+    if(gpio_read(GPIOD, GPIO_0) == 0) {
+        GPIOD->ODR &= ~GPIO_ODR_OD12;
+    } else {
+        GPIOD->ODR |= GPIO_ODR_OD12;
+    }
+
+    if(gpio_read(GPIOD, GPIO_0)== 1 ) {
+        GPIOD->ODR &= ~GPIO_ODR_OD11;
+    } else {
+        GPIOD->ODR |= GPIO_ODR_OD11;
+    }
     //DEBUGLOG("HANDLER\r\n");
     if(start)
     {
         if (gpio_read(GPIOD, GPIO_0) == 0)
         {
+            // GPIOD->ODR |= GPIO_ODR_OD12;
             //DEBUGLOG("Detected falling edge\r\n");
             TIM4->CNT = 0;  //Make sure CNT register is 0
             switchPWM(TIM4, 1); //Start timer TIM4
@@ -83,15 +95,24 @@ void EXTI0_IRQHandler(void)
         //DEBUGLOG("Detected rising edge\r\n");
         switchPWM(TIM4, 0); //Stop timer
         lowDuration = TIM4->CNT; //Capture lowDuration
+        // GPIOD->ODR &= ~GPIO_ODR_OD12;
 
-        TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
-        TIM4->ARR = lowDuration * 1.5;  //Auto reload is 3/4 bitTime
-        //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
-        EXTI->IMR &= 0<<0; //Disable this interrupt
-        start = true;  //Reset start flag
-        NVIC_EnableIRQ(TIM4_IRQn);
-        TIM4->CNT = 0;
-        switchPWM(TIM4, 1); //Start timer TIM4
+        if(180 < lowDuration && lowDuration < 1000)
+        {
+            TIM4->ARR = lowDuration * 1.5;  //Auto reload is 3/4 bitTime
+            NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
+            EXTI->IMR &= 0<<0; //Disable this interrupt
+            start = true;  //Reset start flag
+            TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
+            NVIC_EnableIRQ(TIM4_IRQn);
+            TIM4->CNT = 0;
+            switchPWM(TIM4, 1); //Start timer TIM4
+        }else{
+            switchPWM(TIM4,1);
+            TIM4->CNT = 0;
+            start = true;
+        }
+        
     }
 
     EXTI->PR |= EXTI_PR_PR0; // Clear the EXTI line 0 pending flag
@@ -100,7 +121,6 @@ void EXTI0_IRQHandler(void)
 void TIM4_IRQHandler(void) 
 {
     //DEBUGLOG("Got to TIM4 interrupt\r\n");
-    TIM4->SR &= ~TIM_SR_UIF;
     TIM4->ARR = lowDuration * 2;
     message[bitIndex] = gpio_read(GPIOD, GPIO_0);
     bitIndex++;
@@ -108,13 +128,16 @@ void TIM4_IRQHandler(void)
     {
         bitIndex = 0;
         TIM4->DIER &= TIM_DIER_UIE;  //Disable this interrupt
-        EXTI->IMR |= 1<<0; //Enable EXTI interrupt
+        NVIC_DisableIRQ(TIM4_IRQn);
         for(int i = 0; i<messageLength; i++)
         {
-            receivedIR << 1;
+            receivedIR = receivedIR << 1;
             receivedIR |= message[i];
         }
         receiveFlag = true;
         switchPWM(TIM4, 0); //Stop timer
+        EXTI->IMR |= 1<<0; //Enable EXTI interrupt
+        NVIC_EnableIRQ(EXTI0_IRQn);
     }
+    TIM4->SR &= ~TIM_SR_UIF;
 }

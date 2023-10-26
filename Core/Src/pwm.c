@@ -62,8 +62,8 @@ void initTIMIRR(uint16_t dutycycle, uint32_t frequency) {
 	uint32_t ccr2 = autoreload - ccr1;
 
 	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-	TIM4->PSC = prescal;
-	TIM4->ARR = autoreload;
+	TIM4->PSC = 8;//prescal;
+	TIM4->ARR = 65000;//autoreload;
 	TIM4->CCR1 = ccr1;
 	TIM4->CCR2 = ccr2;
 
