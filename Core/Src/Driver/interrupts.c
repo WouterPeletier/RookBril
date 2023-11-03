@@ -7,18 +7,21 @@
 #include <stdbool.h>
 
 #define messageLength 12
-#define DEBUG
+//#define DEBUG
 
-#ifdef DEBUG
-  #define DEBUGLOG(...) printf(__VA_ARGS__)
-#else
-  #define DEBUGLOG(...)
-#endif
+//#ifdef DEBUG
+//  #define DEBUGLOG(...) printf(__VA_ARGS__)
+//#else
+//  #define DEBUGLOG(...)
+//#endif
 
 bool start = true;
 uint8_t bitIndex = 0;
 uint16_t lowDuration;
 uint8_t message[messageLength];
+uint8_t msgPart = 1;
+uint8_t msgFlag = 0;
+uint8_t oldPD0 = 0;
 
 extern uint16_t receivedIR;
 extern bool receiveFlag;
@@ -26,19 +29,17 @@ extern bool receiveFlag;
 void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 {
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-    EXTI->IMR |= 1<<pin;
     //getest met mode output??
-	init_gpio(port, pin, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    init_gpio(port, pin, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    GPIOD->MODER &= ~(GPIO_MODER_MODE0);  // Clear bits
+    GPIOD->PUPDR &= ~(GPIO_PUPDR_PUPD0);  // No pull-up, no pull-down
 
-    //trigger selection EXTI_RTSR and EXTI_FTSR
-    EXTI->RTSR |= !!(edgeRate & 0b01);  //rising edge
-    EXTI->FTSR |= !!(edgeRate & 0b10); //falling 
-    
+    SYSCFG->EXTICR[0] &= ~(SYSCFG_EXTICR1_EXTI0);  // Clear EXTI0 selection
     // SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
     if(port == GPIOA) // Only works for pin 0
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PA;
-        DEBUGLOG("EXTI line 0 set to use port A\r\n");
+//        DEBUGLOG("EXTI line 0 set to use port A\r\n");
     }else if(port == GPIOB)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI2_PB;
@@ -46,12 +47,18 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     }else if(port == GPIOC)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC;
-        DEBUGLOG("EXTI line 0 set to use port C\r\n");
+//        DEBUGLOG("EXTI line 0 set to use port C\r\n");
     }else if(port == GPIOD)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
-        DEBUGLOG("EXTI line 0 set to use port D\r\n");
+//        DEBUGLOG("EXTI line 0 set to use port D\r\n");
     }
+
+    EXTI->IMR |= 1<<pin;
+
+    //trigger selection EXTI_RTSR and EXTI_FTSR
+    EXTI->RTSR |= !!(edgeRate & 0b01);  //rising edge
+    EXTI->FTSR |= !!(edgeRate & 0b10); //falling
 
     EXTI->PR |= EXTI_PR_PR2;
 
@@ -61,12 +68,13 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     NVIC_EnableIRQ(EXTI2_IRQn);
     //Enable interrupt in EXTI module
     
-    DEBUGLOG("Interrupt set\r\n");
+//    DEBUGLOG("Interrupt set\r\n");
     //EXTI->PR |= EXTI_PR_PR0; // Clear the EXTI line 0 pending flag
 
 }
 
 void EXTI2_IRQHandler(void)
+
 {
     if(gpio_read(GPIOB, GPIO_2) == 0) {
         GPIOD->ODR &= ~GPIO_ODR_OD12;
@@ -80,55 +88,70 @@ void EXTI2_IRQHandler(void)
         GPIOD->ODR |= GPIO_ODR_OD11;
     }
     //DEBUGLOG("HANDLER\r\n");
-    if(start)
-    {
-        if (gpio_read(GPIOD, GPIO_0) == 0)
+    if (EXTI->PR & EXTI_PR_PR0) {
+        GPIOD->ODR ^= GPIO_ODR_OD12;
+        if(start)
         {
-            // GPIOD->ODR |= GPIO_ODR_OD12;
-            //DEBUGLOG("Detected falling edge\r\n");
-            TIM4->CNT = 0;  //Make sure CNT register is 0
-            switchPWM(TIM4, 1); //Start timer TIM4
-            start = false;  //Set flag to false
-        }  
-    }else
-    {
-        //DEBUGLOG("Detected rising edge\r\n");
-        switchPWM(TIM4, 0); //Stop timer
-        lowDuration = TIM4->CNT; //Capture lowDuration
-        // GPIOD->ODR &= ~GPIO_ODR_OD12;
-
-        if(180 < lowDuration && lowDuration < 1000)
-        {
-            TIM4->ARR = lowDuration * 1.5;  //Auto reload is 3/4 bitTime
-            NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
-            EXTI->IMR &= 0<<0; //Disable this interrupt
-            start = true;  //Reset start flag
-            TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
-            NVIC_EnableIRQ(TIM4_IRQn);
-            TIM4->CNT = 0;
-            switchPWM(TIM4, 1); //Start timer TIM4
-        }else{
-            switchPWM(TIM4,1);
-            TIM4->CNT = 0;
-            start = true;
+            if (gpio_read(GPIOD, GPIO_0) == 0)
+            {
+                GPIOD->ODR |= GPIO_ODR_OD14;
+                //DEBUGLOG("Detected falling edge\r\n");
+                TIM4->CNT = 0;  //Make sure CNT register is 0
+                switchPWM(TIM4, 1); //Start timer TIM4
+                start = false;  //Set flag to false
+            }
+        }else {
+            //DEBUGLOG("Detected rising edge\r\n");
+            switchPWM(TIM4, 0); //Stop timer
+            lowDuration = TIM4->CNT; //Capture lowDuration 7112 = 889us, 4802 = 600 us
+            if(lowDuration < 4000) {
+                TIM4->CNT = 0;
+                switchPWM(TIM4, 1); //Start timer
+                EXTI->PR |= EXTI_PR_PR0;
+            } else if(lowDuration > 10000) {
+                TIM4->CNT = 0;
+                switchPWM(TIM4, 1); //Start timer
+                EXTI->PR |= EXTI_PR_PR0;
+            } else {
+            	if(6500 < lowDuration < 7600) { //lowDuration tussen 815us en 950us
+            		lowDuration = 7112; //lowDuration is 889us
+            	}
+                TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
+                TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
+                //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
+                EXTI->IMR &= 0<<0; //Disable this interrupt
+                NVIC_DisableIRQ(EXTI0_IRQn);
+                start = true;  //Reset start flag
+                GPIOD->ODR &= ~GPIO_ODR_OD14;
+                NVIC_EnableIRQ(TIM4_IRQn);
+                TIM4->CNT = 0;
+                switchPWM(TIM4, 1); //Start timer TIM4
+            }
         }
-        
     }
-
     EXTI->PR |= EXTI_PR_PR2; // Clear the EXTI line 0 pending flag
 }
 
-void TIM4_IRQHandler(void) 
-{
+void TIM4_IRQHandler(void) {
     //DEBUGLOG("Got to TIM4 interrupt\r\n");
+    GPIOD->ODR |= GPIO_ODR_OD11;
+    GPIOD->ODR |= GPIO_ODR_OD13;
     TIM4->ARR = lowDuration * 2;
-    message[bitIndex] = gpio_read(GPIOD, GPIO_0);
+    // if(msgPart == 1) {
+    //     message[bitIndex] = gpio_read(GPIOD, GPIO_0);
+    //     bitIndex++;
+    //     msgPart++;
+    // } else if(msgPart == 2) {
+    //     if((GPIOD->IDR & GPIO_IDR_ID0) == oldPD0) {
+    //         msgFlag++;
+    //     }
+    //     msgPart --;
+    // }
+    message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //data inverteren
     bitIndex++;
-    if(bitIndex == messageLength)
+    if(bitIndex == messageLength) 
     {
         bitIndex = 0;
-        TIM4->DIER &= TIM_DIER_UIE;  //Disable this interrupt
-        NVIC_DisableIRQ(TIM4_IRQn);
         for(int i = 0; i<messageLength; i++)
         {
             receivedIR = receivedIR << 1;
@@ -136,8 +159,12 @@ void TIM4_IRQHandler(void)
         }
         receiveFlag = true;
         switchPWM(TIM4, 0); //Stop timer
+        GPIOD->ODR &= ~GPIO_ODR_OD13;
         EXTI->IMR |= 1<<0; //Enable EXTI interrupt
         NVIC_EnableIRQ(EXTI0_IRQn);
+        TIM4->ARR = 65000;
+        TIM4->DIER &= TIM_DIER_UIE;  //Disable this interrupt
     }
+    GPIOD->ODR &= ~GPIO_ODR_OD11;
     TIM4->SR &= ~TIM_SR_UIF;
 }
