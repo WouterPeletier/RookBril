@@ -45,8 +45,13 @@ int main(void)
 
     // Turn all LEDs Off
     GPIOD->ODR &= ~(GPIO_ODR_OD12 | GPIO_ODR_OD14 | GPIO_ODR_OD11 | GPIO_ODR_OD13 | GPIO_ODR_OD9);
-
+    init_gpio(GPIOA, GPIO_4, GPIO_MODER_OUTPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    gpio_write(GPIOA, GPIO_4, 1);
+    init_gpio(GPIOA, GPIO_0, GPIO_MODER_OUTPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    gpio_write(GPIOA, GPIO_0, 1);
+    initTimPDLC2(50, 100);
     receive();
+
     // uint8_t PD13 = 0;
     while(1)
     {

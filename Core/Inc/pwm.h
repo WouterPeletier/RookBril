@@ -16,7 +16,7 @@
  *
  */
 
-
+void initTimPDLC2(uint16_t dutycycle, uint32_t frequency);
 void initTIMPDLC(uint16_t dutycycle, uint32_t frequency);
 void initTIMIRR(uint16_t dutycycle, uint32_t frequency); //Receive
 void initTIMIRS(uint16_t dutycycle, uint32_t frequency); //Send timer

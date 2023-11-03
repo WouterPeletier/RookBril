@@ -3,6 +3,57 @@
 #include "platform.h"
 #include "gpio.h"
 
+void initTimPDLC2(uint16_t dutycycle, uint32_t frequency)
+{
+    //pa3 timer 5 op bepaalde frequentie
+    //vervolgens pwm op timer 2 
+
+    uint16_t prescal = 0;
+    uint16_t autoreload = (F_CPU/(2*frequency*(prescal+1)))-1;
+    uint16_t ccr = (dutycycle*autoreload)/100;
+
+    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    TIM2->PSC = prescal;
+    TIM2->ARR = autoreload/10;  //Higher frequency
+    TIM2->CCR4 = ccr/10;
+
+
+    /* center aligned, mode 3: Output compare interrupt flags set when counting up and down */
+    TIM2->CR1 |= (3<<TIM_CR1_CMS_Pos);
+    /* Output 4 is active when CNT<CCR1 */
+    TIM2->CCMR2 |= (0b110<<TIM_CCMR2_OC4M_Pos);
+
+    init_gpio(GPIOA, GPIO_3, GPIO_MODER_ALT, GPIO_ALTFUNC_1, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    /* Connect timer output to gpio output*/
+    TIM2->CCER |= TIM_CCER_CC4E;
+    /* Enable timer */
+    TIM2->CR1 |= TIM_CR1_CEN;
+
+    /***********/
+    RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+    TIM5->PSC = prescal;
+    TIM5->ARR = autoreload;
+    TIM5->CCR3 = ccr;
+    TIM5->CCR2 = ccr;
+
+    /* center aligned, mode 3: Output compare interrupt flags set when counting up and down */
+    TIM5->CR1 |= (3<<TIM_CR1_CMS_Pos);
+    /* Output 3 is active when CNT<CCR1 */
+    TIM5->CCMR2 |= (0b110<<TIM_CCMR2_OC3M_Pos);
+    TIM5->CCMR1 |= (0b111<<TIM_CCMR1_OC2M_Pos);
+
+    init_gpio(GPIOA, GPIO_2, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+    init_gpio(GPIOA, GPIO_1, GPIO_MODER_ALT, GPIO_ALTFUNC_2, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+
+    /* Connect timer output to gpio output*/
+    TIM5->CCER |= (TIM_CCER_CC2E | TIM_CCER_CC3E);
+    /* Enable timer */
+    TIM5->CR1 |= TIM_CR1_CEN;
+
+
+
+}
+
 void initTIMPDLC(uint16_t dutycycle, uint32_t frequency) {
     if(dutycycle > 100) dutycycle = 50;
     
