@@ -6,7 +6,7 @@
 #include "pwm.h"
 #include <stdbool.h>
 
-#define messageLength 10
+#define messageLength 12
 //#define DEBUG
 
 //#ifdef DEBUG
@@ -113,8 +113,11 @@ void EXTI0_IRQHandler(void)
                 switchPWM(TIM4, 1); //Start timer
                 EXTI->PR |= EXTI_PR_PR0;
             } else {
+            	if(6500 < lowDuration < 7600) { //lowDuration tussen 815us en 950us
+            		lowDuration = 7112; //lowDuration is 889us
+            	}
                 TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
-                TIM4->ARR = lowDuration * 1.5;  //Auto reload is 3/4 bitTime
+                TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
                 //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
                 EXTI->IMR &= 0<<0; //Disable this interrupt
                 NVIC_DisableIRQ(EXTI0_IRQn);
@@ -144,7 +147,7 @@ void TIM4_IRQHandler(void) {
     //     }
     //     msgPart --;
     // }
-    message[bitIndex] = gpio_read(GPIOD, GPIO_0);
+    message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //data inverteren
     bitIndex++;
     if(bitIndex == messageLength) 
     {
