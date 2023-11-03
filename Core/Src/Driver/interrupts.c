@@ -42,8 +42,8 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 //        DEBUGLOG("EXTI line 0 set to use port A\r\n");
     }else if(port == GPIOB)
     {
-        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB;
-//        DEBUGLOG("EXTI line 0 set to use port B\r\n");
+        SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI2_PB;
+        DEBUGLOG("EXTI line 0 set to use port B\r\n");
     }else if(port == GPIOC)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC;
@@ -60,12 +60,12 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     EXTI->RTSR |= !!(edgeRate & 0b01);  //rising edge
     EXTI->FTSR |= !!(edgeRate & 0b10); //falling
 
-    EXTI->PR |= EXTI_PR_PR0;
+    EXTI->PR |= EXTI_PR_PR2;
 
-    NVIC_SetPriority(EXTI0_IRQn, 0);
+    NVIC_SetPriority(EXTI2_IRQn, 0);
 
     //Enable interrupt in NVIC
-    NVIC_EnableIRQ(EXTI0_IRQn);
+    NVIC_EnableIRQ(EXTI2_IRQn);
     //Enable interrupt in EXTI module
     
 //    DEBUGLOG("Interrupt set\r\n");
@@ -73,16 +73,16 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 
 }
 
-uint8_t first = 0;
-void EXTI0_IRQHandler(void)
+void EXTI2_IRQHandler(void)
+
 {
-    if(gpio_read(GPIOD, GPIO_0) == 0) {
+    if(gpio_read(GPIOB, GPIO_2) == 0) {
         GPIOD->ODR &= ~GPIO_ODR_OD12;
     } else {
         GPIOD->ODR |= GPIO_ODR_OD12;
     }
 
-    if(gpio_read(GPIOD, GPIO_0)== 1 ) {
+    if(gpio_read(GPIOB, GPIO_2)== 1 ) {
         GPIOD->ODR &= ~GPIO_ODR_OD11;
     } else {
         GPIOD->ODR |= GPIO_ODR_OD11;
@@ -129,7 +129,7 @@ void EXTI0_IRQHandler(void)
             }
         }
     }
-    EXTI->PR |= EXTI_PR_PR0; // Clear the EXTI line 0 pending flag
+    EXTI->PR |= EXTI_PR_PR2; // Clear the EXTI line 0 pending flag
 }
 
 void TIM4_IRQHandler(void) {
