@@ -7,13 +7,13 @@
 #include <stdbool.h>
 
 #define messageLength 12
-//#define DEBUG
+#define DEBUG
 
-//#ifdef DEBUG
-//  #define DEBUGLOG(...) printf(__VA_ARGS__)
-//#else
-//  #define DEBUGLOG(...)
-//#endif
+#ifdef DEBUG
+ #define DEBUGLOG(...) printf(__VA_ARGS__)
+#else
+ #define DEBUGLOG(...)
+#endif
 
 bool start = true;
 uint8_t bitIndex = 0;
@@ -57,8 +57,8 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     EXTI->IMR |= 1<<pin;
 
     //trigger selection EXTI_RTSR and EXTI_FTSR
-    EXTI->RTSR |= !!(edgeRate & 0b01);  //rising edge
-    EXTI->FTSR |= !!(edgeRate & 0b10); //falling
+    EXTI->RTSR |= (!!(edgeRate & 0b01))<<pin;  //rising edge
+    EXTI->FTSR |= (!!(edgeRate & 0b10))<<pin; //falling
 
     EXTI->PR |= EXTI_PR_PR2;
 
