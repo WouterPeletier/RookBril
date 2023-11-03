@@ -11,15 +11,15 @@
 
 #define Address  1 //Address tussen 0 en 32
 
-//#ifdef SEMIHOSTING
-//    extern void initialise_monitor_handles(void);
-//#endif
-//
-//#ifdef DEBUG
-//  #define DEBUGLOG(...) printf(__VA_ARGS__)
-//#else
-//  #define DEBUGLOG(...)
-//#endif
+#ifdef SEMIHOSTING
+   extern void initialise_monitor_handles(void);
+#endif
+
+#ifdef DEBUG
+ #define DEBUGLOG(...) printf(__VA_ARGS__)
+#else
+ #define DEBUGLOG(...)
+#endif
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
