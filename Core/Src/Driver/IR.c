@@ -1,4 +1,3 @@
-
 /*
  * IR.c
  *
@@ -9,11 +8,23 @@
  *  	TIM3, TIM2 for sending
  */
 
+#include "stm32f4xx.h"
+#include "interrupts.h"
+#include "gpio.h"
 #include "pwm.h"
 #include "IR.h"
-extern bool sendFlag;
+
+#define DEBUG
+
+#ifdef DEBUG
+  #define DEBUGLOG(...) printf(__VA_ARGS__)
+#else
+  #define DEBUGLOG(...)
+#endif
 
 #define lowDuration 600
+
+extern bool sendFlag;
 uint8_t IRData[14];
 uint32_t i = 0;
 uint8_t periodTag = 0;
@@ -92,3 +103,10 @@ void TIM2_IRQHandler(void) {
  * TIM2
  *
  */
+
+void receive()
+{  
+//    DEBUGLOG("Receive function called\r\n");
+    initTIMIRR(50, 38000);
+    set_interrupt(GPIOB, GPIO_2, INT_ALL_EDGE);  //MOET pin 0 zijn voor EXTI 0. Pin nummer = EXTI nummer
+}

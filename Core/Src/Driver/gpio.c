@@ -92,7 +92,6 @@ void init_gpio_options(gpio_opt_t options)
 	if(options.Port == GPIOC) RCC->AHB1ENR |=   RCC_AHB1ENR_GPIOCEN;
 	if(options.Port == GPIOD) RCC->AHB1ENR |=   RCC_AHB1ENR_GPIODEN;
 
-
     gpio_configure_pin(options);
 }
 
