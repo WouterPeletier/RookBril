@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stm32f4xx.h>
 #include <stdio.h>
 
@@ -9,3 +11,5 @@ typedef struct IRPacket{
 } IRPacket;
 
 void receive();
+void IRInit(uint8_t address, IRMode mode);
+void IRSend(uint8_t data);

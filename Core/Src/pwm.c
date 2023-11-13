@@ -50,8 +50,6 @@ void initTimPDLC2(uint16_t dutycycle, uint32_t frequency)
     /* Enable timer */
     TIM5->CR1 |= TIM_CR1_CEN;
 
-
-
 }
 
 void initTIMPDLC(uint16_t dutycycle, uint32_t frequency) {
@@ -114,7 +112,7 @@ void initTIMIRR(uint16_t dutycycle, uint32_t frequency) {
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
     TIM4->PSC = prescal;
-    TIM4->ARR = 65535;
+    TIM4->ARR = autoreload;
     TIM4->CCR1 = ccr1;
     TIM4->CCR2 = ccr2;
 
