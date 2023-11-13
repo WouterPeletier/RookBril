@@ -10,6 +10,7 @@
 
 #include "stm32f4xx.h"
 #include "interrupts.h"
+#include <stdbool.h>
 #include "gpio.h"
 #include "pwm.h"
 #include "IR.h"

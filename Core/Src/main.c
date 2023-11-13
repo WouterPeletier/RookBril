@@ -33,24 +33,24 @@ uint16_t receivedIR;
 bool receiveFlag = false;
 bool sendFlag = false;
 
-void send(void);
-void receive(void);
+void beacon_main(void);
+void bril_main(void);
 
 int main(void){
     #ifdef SEMIHOSTING
         initialise_monitor_handles();
     #endif  
   
-    send();
-}
-
-void receive(void)
-{
-    
-
     init_platform();
     DEBUGLOG("Platform Initiated\r\n");
-    init_gpio(GPIOB, GPIO_2, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+
+    bril_main();
+}
+
+void bril_main(void)
+{
+    DEBUGLOG("Running Bril Code");
+	init_gpio(GPIOB, GPIO_2, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
     RCC->AHB1ENR = RCC_AHB1ENR_GPIODEN;
     // Set all LEDs output
@@ -73,10 +73,10 @@ void receive(void)
     }
 }
 
-void send(void) {
+void beacon_main(void) {
+	DEBUGLOG("Running Becaon Code");
 	IRMsg->IRAddress = 1;
 
-	init_platform();
 	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 	gpio_toggle(GPIOA, GPIO_0);
 	initTIMIRS(50, 38000);
