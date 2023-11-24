@@ -99,11 +99,11 @@ uint32_t kanIkTellen = 0;
 void SysTick_Handler(void)
 {
 	
-	gpio_toggle(GPIOD, GPIO_15);
+//	gpio_toggle(GPIOD, GPIO_15);
 	if(kanIkTellen == 0)
 	{
 		kanIkTellen = 10;
-		gpio_toggle(GPIOD, GPIO_13);
+//		gpio_toggle(GPIOD, GPIO_13);
 	}
 	kanIkTellen--;
 	gSysticks++;

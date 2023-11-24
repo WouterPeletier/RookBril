@@ -15,9 +15,6 @@
    extern void initialise_monitor_handles(void);
 #endif
 
-//If DEBUG is defined, DEBUGLOG() can be used as printf(). If not defined, DEBUGLOG() does nothing 
-//#define DEBUG;
-
 #ifdef DEBUG
  #define DEBUGLOG(...) printf(__VA_ARGS__)
 #else
@@ -39,6 +36,8 @@ int main(void)
     #endif
 
     init_platform();
+    DEBUGLOG("Platform Initiated\r\n");
+    init_gpio(GPIOB, GPIO_2, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
     RCC->AHB1ENR = RCC_AHB1ENR_GPIODEN;
     // Set all LEDs output
