@@ -29,17 +29,17 @@ extern bool receiveFlag;
 void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 {
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-    //getest met mode output??
     init_gpio(port, pin, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
     GPIOD->MODER &= ~(GPIO_MODER_MODE0);  // Clear bits
     GPIOD->PUPDR &= ~(GPIO_PUPDR_PUPD0);  // No pull-up, no pull-down
 
     SYSCFG->EXTICR[0] &= ~(SYSCFG_EXTICR1_EXTI0);  // Clear EXTI0 selection
-    // SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
+    
+    //Port selection
     if(port == GPIOA) // Only works for pin 0
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PA;
-//        DEBUGLOG("EXTI line 0 set to use port A\r\n");
+    //DEBUGLOG("EXTI line 0 set to use port A\r\n");
     }else if(port == GPIOB)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI2_PB;
@@ -47,11 +47,11 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
     }else if(port == GPIOC)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC;
-//        DEBUGLOG("EXTI line 0 set to use port C\r\n");
+    //DEBUGLOG("EXTI line 0 set to use port C\r\n");
     }else if(port == GPIOD)
     {
         SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
-//        DEBUGLOG("EXTI line 0 set to use port D\r\n");
+    //DEBUGLOG("EXTI line 0 set to use port D\r\n");
     }
 
     EXTI->IMR |= 1<<pin;
@@ -73,15 +73,18 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 }
 
 void EXTI2_IRQHandler(void)
-
 {
-    if(gpio_read(GPIOB, GPIO_2) == 0) {
+    //Output pins used for debugging
+    if(gpio_read(GPIOB, GPIO_2) == 0) 
+    {
         GPIOD->ODR &= ~GPIO_ODR_OD12;
     } else {
         GPIOD->ODR |= GPIO_ODR_OD12;
     }
 
-    if(gpio_read(GPIOB, GPIO_2)== 1 ) {
+    //Output pins used for debugging
+    if(gpio_read(GPIOB, GPIO_2)== 1 ) 
+    {
         GPIOD->ODR &= ~GPIO_ODR_OD11;
     } else {
         GPIOD->ODR |= GPIO_ODR_OD11;
@@ -138,17 +141,7 @@ void TIM4_IRQHandler(void)
     GPIOD->ODR |= GPIO_ODR_OD11;
     GPIOD->ODR |= GPIO_ODR_OD13;
     TIM4->ARR = lowDuration * 2;
-    // if(msgPart == 1) {
-    //     message[bitIndex] = gpio_read(GPIOD, GPIO_0);
-    //     bitIndex++;
-    //     msgPart++;
-    // } else if(msgPart == 2) {
-    //     if((GPIOD->IDR & GPIO_IDR_ID0) == oldPD0) {
-    //         msgFlag++;
-    //     }
-    //     msgPart --;
-    // }
-    message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //data inverteren
+    message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //Invert data
     bitIndex++;
     if(bitIndex == messageLength) 
     {
