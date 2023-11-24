@@ -23,8 +23,8 @@
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
-uint32_t bitCycles = 4800; //De tijd van de bit in clock cycles = 600us/(1/F_CPU (8000000))
-uint32_t sendIntervalms = 1000; //De tijd in ms hoelang het duurt tot de volgende IR send command
+uint32_t bitCycles = 4800; //Bit time in in clock cycles = 600us/(1/F_CPU (8000000))
+uint32_t sendIntervalms = 1000; //Milliseconds delay between IR commands 
 
 uint16_t receivedIR;
 bool receiveFlag = false;
