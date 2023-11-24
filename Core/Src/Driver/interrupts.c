@@ -26,6 +26,9 @@ uint8_t oldPD0 = 0;
 extern uint16_t receivedIR;
 extern bool receiveFlag;
 
+int validIDs[] = {0b0000, 0b0001, 0b0010, 0b0011, 0b0100}; //Define valid messages IDs
+int validMessages[] = {0b0000, 0b0001, 0b0010, 0b0011, 0b0100}; //Define valid messages content
+
 void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 {
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
@@ -135,12 +138,41 @@ void EXTI2_IRQHandler(void)
     EXTI->PR |= EXTI_PR_PR2; // Clear the EXTI line 0 pending flag
 }
 
+int validID(int received)
+{
+    // Iterate through the valid messages and check for a match
+    for (int i = 0; i < sizeof(validIDs) / sizeof(validIDs[0]); i++) 
+    {
+        if (received == validIDs[i]) 
+        {
+            return 1; //Valid message
+        }
+    }
+    
+    return 0; //Invalid message
+}
+
+int validMessage(int received)
+{
+    // Iterate through the valid messages and check for a match
+    for (int i = 0; i < sizeof(validMessages) / sizeof(validMessages[0]); i++) 
+    {
+        if (received == validMessages[i]) 
+        {
+            return 1; //Valid message
+        }
+    }
+    
+    return 0; //Invalid message
+}
+
 void TIM4_IRQHandler(void) 
 {
-    //DEBUGLOG("Got to TIM4 interrupt\r\n");
+    DEBUGLOG("Got to TIM4 interrupt\r\n");
     GPIOD->ODR |= GPIO_ODR_OD11;
     GPIOD->ODR |= GPIO_ODR_OD13;
     TIM4->ARR = lowDuration * 2;
+    
     message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //Invert data
     bitIndex++;
     if(bitIndex == messageLength) 
@@ -158,6 +190,23 @@ void TIM4_IRQHandler(void)
         NVIC_EnableIRQ(EXTI0_IRQn);
         TIM4->ARR = 65000;
         TIM4->DIER &= TIM_DIER_UIE;  //Disable this interrupt
+
+        int receivedID = receivedIR & 0b11110000; //extract bit 7-4
+        int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
+
+        if(validID(receivedID)) //Checking if received ID is valid
+        {
+            DEBUGLOG("Valid ID");
+        }else{
+            DEBUGLOG("Invalid ID");
+        }
+
+        if(validMessage(receivedMessage)) //Checking if received message is valid
+        {
+            DEBUGLOG("Valid message");
+        }else{
+            DEBUGLOG("Invalid message");
+        }
     }
     GPIOD->ODR &= ~GPIO_ODR_OD11;
     TIM4->SR &= ~TIM_SR_UIF;
