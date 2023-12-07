@@ -1,4 +1,4 @@
-#include <stdint.h>
+ #include <stdint.h>
 #include <stdio.h>
 #include <stm32f4xx.h>
 #include <stdbool.h>
@@ -8,6 +8,8 @@
 #include "pwm.h"
 #include "interrupts.h"
 #include "IR.h"
+#include "fonts.h"
+#include "ssd1306.h"
 
 #ifdef SEMIHOSTING
    extern void initialise_monitor_handles(void);
@@ -21,7 +23,8 @@
 
 
 #define Receiving
-#define Address = 1; //Address tussen 0 en 32
+uint8_t Address = 1; //Address tussen 0 en 32
+uint8_t PDLC_intensity = 0;
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
@@ -74,10 +77,32 @@ void bril_main(void)
 }
 
 void beacon_main(void) {
-	DEBUGLOG("Running Becaon Code");
+	DEBUGLOG("Running Beacon Code");
 	IRMsg->IRAddress = 1;
 
+	DEBUGLOG("initializing IR LED GPIO");
 	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+
+	/*
+	DEBUGLOG("initializing encoder GPIO's");
+	init_gpio(GPIOA, GPIO_0, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
+	set_interrupt(GPIOA, GPIO_0, INT_RISING_EDGE);
+
+	init_gpio(GPIOA, GPIO_0, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
+	set_interrupt(GPIOA, GPIO_0, INT_RISING_EDGE);
+
+	init_gpio(GPIOA, GPIO_0, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
+	set_interrupt(GPIOA, GPIO_0, INT_RISING_EDGE);
+	*/
+
+
+	DEBUGLOG("initializing I2C GPIO's");
+	init_gpio(GPIOA, GPIO_13, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
+	init_gpio(GPIOA, GPIO_14, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
+
+	DEBUGLOG("initializing I2C and display driver");
+	SSD1306_Init();
+
 	gpio_toggle(GPIOA, GPIO_0);
 	initTIMIRS(50, 38000);
 	IRInit(0b00110, Send);
