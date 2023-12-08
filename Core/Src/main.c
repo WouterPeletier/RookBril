@@ -7,6 +7,7 @@
 #include "gpio.h"
 #include "pwm.h"
 #include "interrupts.h"
+#include "user_interface.h"
 #include "IR.h"
 #include "fonts.h"
 #include "ssd1306.h"
@@ -45,9 +46,9 @@ int main(void){
     #endif  
   
     init_platform();
-    DEBUGLOG("Platform Initiated\r\n");
+    //DEBUGLOG("Platform Initiated\r\n");
 
-    bril_main();
+    beacon_main();
 }
 
 void bril_main(void)
@@ -77,11 +78,11 @@ void bril_main(void)
 }
 
 void beacon_main(void) {
-	DEBUGLOG("Running Beacon Code");
+/*	DEBUGLOG("Running Beacon Code");
 	IRMsg->IRAddress = 1;
 
 	DEBUGLOG("initializing IR LED GPIO");
-	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
+	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);*/
 
 	/*
 	DEBUGLOG("initializing encoder GPIO's");
@@ -96,19 +97,33 @@ void beacon_main(void) {
 	*/
 
 
-	DEBUGLOG("initializing I2C GPIO's");
+	//DEBUGLOG("initializing I2C GPIO's");
 	init_gpio(GPIOA, GPIO_13, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
 	init_gpio(GPIOA, GPIO_14, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
 
-	DEBUGLOG("initializing I2C and display driver");
+	//DEBUGLOG("initializing I2C and display driver");
 	SSD1306_Init();
 
-	gpio_toggle(GPIOA, GPIO_0);
+	init_settings();
+
+/*	gpio_toggle(GPIOA, GPIO_0);
 	initTIMIRS(50, 38000);
 	IRInit(0b00110, Send);
 	for(volatile uint32_t j = 0; j<400000; j++) {
 	}
-	IRSend(0b011010);
+	IRSend(0b011010);*/
+
 	while(1){
+		for (int i = 0; i<settings_count; ++i)
+		{
+			display_menu(i);
+			for (int j = 0; j < 1000000; j++);
+
+			display_setting(i);
+			for (int j = 0; j < 1500000; j++);
+
+			display_menu(i);
+			for (int j = 0; j < 1000000; j++);
+		}
 	}
 }
