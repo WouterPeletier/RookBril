@@ -10,7 +10,7 @@
 extern uint8_t PDLC_intensity;
 extern uint8_t Address;
 
-struct setting_struct {
+/*struct setting_struct {
   char name[max_string_length + 1];
   char display_string[max_string_length + 1];
 
@@ -20,25 +20,31 @@ struct setting_struct {
   int val_digit_count;
 
   void* fun_ptr;
-};
+};*/
 
 struct setting_struct settings[settings_count];
 uint8_t settings_current = 0;
 bool settings_menu = true;
 
-enum inputs{CW, CCW, PB}; // input kan; een clockwise rotatie-, counter-clockwise rotatie- of een push button signaal zijn
+//enum inputs{CW, CCW, PB}; // input kan; een clockwise rotatie-, counter-clockwise rotatie- of een push button signaal zijn
 
 
-bool exit_UI(void)
+void exit_UI(void)
 {
-//todo clear and update screen
-	return true;
+	/* Clear screen */
+	SSD1306_Fill(SSD1306_COLOR_BLACK);
+
+	/* Update screen */
+	SSD1306_UpdateScreen();
+	return;
 }
 
 
 struct setting_struct generate_display_string(struct setting_struct setting)
 {
-	if (setting.value_ptr = 0)
+	strcpy(setting.display_string, setting.name);
+
+	if (setting.value_ptr == 0)
 	{
 		return setting;
 	}
@@ -49,7 +55,7 @@ struct setting_struct generate_display_string(struct setting_struct setting)
 
 	int val_digit_count = 1;
 
-	uint32_t value = &(setting.value_ptr);
+	uint32_t value = *(setting.value_ptr);
 
 	if (value < 0)
 	{
@@ -80,17 +86,17 @@ struct setting_struct generate_display_string(struct setting_struct setting)
 	return setting;
 }
 
-struct setting_struct new_setting(char* name, uint32_t* value_ptr, uint32_t value_max, uint32_t value_min, void* fun_ptr)
+struct setting_struct new_setting(char* name, int32_t* value_ptr, int32_t value_max, int32_t value_min, void* fun_ptr)
 {
 	struct setting_struct new_setting;
 
 	strxfrm(new_setting.name, name, max_string_length);
-	strcpy(new_setting.display_string, new_setting.name);
 
 	new_setting.value_ptr = value_ptr;
 
 	new_setting.value_max = value_max;
 	new_setting.value_min = value_min;
+	new_setting.val_digit_count = 1;
 
 	new_setting.fun_ptr = fun_ptr;
 
@@ -106,7 +112,6 @@ void init_settings(void)
 
 	settings[1] = new_setting("intensity", &PDLC_intensity, 100, 0, 0);
 	settings[2] = new_setting("ID", &Address, 31, 0, 0);
-
 
 }
 
@@ -148,61 +153,79 @@ void display_setting(uint8_t n)
 	SSD1306_UpdateScreen();
 }
 
-/*bool iterate_UI(enum inputs input)
+bool iterate_UI(enum inputs input)
 {
 	if (settings_menu)
 	{
 		switch(input) {
 		  case CW:
 			  settings_current = (settings_current + (settings_count + 1)) % settings_count;
-			  //todo update menu and screen
+			  display_menu(settings_current);
 			  break;
 
 		  case CCW:
 			  settings_current = (settings_current + (settings_count - 1)) % settings_count;
-			  //todo update menu and screen
+			  display_menu(settings_current);
 		    break;
 
 		  case PB:
-			  settings_menu = false;
-			  //todo show setting and value BIG and update screen
+			  if (settings[settings_current].fun_ptr == 0){
+				  settings_menu = false;
+				  display_setting(settings_current);
+			  }
+			  else
+			  {
+					(*(settings[settings_current].fun_ptr))();
+					return true;
+			  }
 			  break;
 
 		  //default:
 		    // code block
 		}
+		return false;
 	}
 	else if (!settings_menu)
 	{
-		if (settings[settings_current].fun_ptr = 0)
-		{
-			switch(input) {
-			  case CW:
-				  *(settings[settings_current].value) = (*(settings[settings_current].value) + (settings[settings_current].max_value + 1)) % settings[settings_current].max_value;
-				  //todo update screen
-				  break;
+		switch(input) {
+		  case CW:
+			  //*(settings[settings_current].value_ptr) = ((*(settings[settings_current].value_ptr) + (settings[settings_current].value_max + 1)) % (settings[settings_current].value_max)) + settings[settings_current].value_min;
+			  if (*(settings[settings_current].value_ptr) < settings[settings_current].value_max)
+			  {
+				  ++*(settings[settings_current].value_ptr);
+			  }
+			  else
+			  {
+				  *(settings[settings_current].value_ptr) = settings[settings_current].value_min;
+			  }
+			  display_setting(settings_current);
+			  break;
 
-			  case CCW:
-				  *(settings[settings_current].value) = (*(settings[settings_current].value) + (settings[settings_current].max_value - 1)) % settings[settings_current].max_value;
-				  //todo update screen
-				break;
+		  case CCW:
+			  //*(settings[settings_current].value_ptr) = ((*(settings[settings_current].value_ptr) + (settings[settings_current].value_max - 1)) % (settings[settings_current].value_max)) +  settings[settings_current].value_min;
 
-			  case PB:
-				  settings_menu = true;
-				  //todo show menu and update screen
-				  break;
+			  if (*(settings[settings_current].value_ptr) > settings[settings_current].value_min)
+			  {
+				  --*(settings[settings_current].value_ptr);
+			  }
+			  else
+			  {
+				  *(settings[settings_current].value_ptr) = settings[settings_current].value_max;
+			  }
+			  display_setting(settings_current);
+			break;
 
-			  //default:
-				// code block
-			}
+		  case PB:
+			  settings_menu = true;
+			  settings[settings_current] = generate_display_string(settings[settings_current]);
+			  display_menu(settings_current);
+			  break;
+
+		  //default:
+			// code block
 		}
-		else
-		{
-			if (input = PB)
-			{
-				return (*(settings[settings_current].fun_ptr))();
-			}
-		}
+
+		return false;
 	}
 
-}*/
+}

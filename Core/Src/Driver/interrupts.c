@@ -73,6 +73,7 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 
 }
 
+
 void EXTI2_IRQHandler(void)
 {
     if(gpio_read(GPIOB, GPIO_2) == 0) {
