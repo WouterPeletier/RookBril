@@ -6,6 +6,8 @@
 #include "pwm.h"
 #include <stdbool.h>
 
+#include "user_interface.h"
+
 #define messageLength 12
 #define DEBUG
 
@@ -73,6 +75,26 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 
 }
 
+/*void UI_interrupt(void)
+{
+	enum inputs input;
+
+	//todo disable interrupts
+
+	while(1)
+	{
+		//todo wacht tot een van de knoppen is ingedrukt
+		//todo bepaal welke knop is ingedrukt en assign dat aan de input variabel
+		if (iterate_UI(input)) // verwerkt de input in de UI
+		{
+			break; // als iterate_UI 1 returned is de gebruiker klaar met de UI
+		}
+	}
+
+	//todo enable interrupts
+
+
+}*/
 
 void EXTI2_IRQHandler(void)
 {
