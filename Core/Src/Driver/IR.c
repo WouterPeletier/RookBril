@@ -45,7 +45,7 @@ void IRInit(uint8_t address, IRMode mode) {
 		NVIC_EnableIRQ(TIM2_IRQn); //enable interrupts for TIM2
 	} else if(mode == Receive) {
 		initTIMIRR(50, (1/lowDuration)*1000000); // TIM4 600us freq
-		set_interrupt(GPIOA, GPIO_0, 3);
+		set_interrupt(GPIOA, GPIO_0, 3, GPIO_PULL_NONE);
 	}
 }
 
@@ -109,5 +109,5 @@ void receive()
 {  
 //    DEBUGLOG("Receive function called\r\n");
     initTIMIRR(50, 38000);
-    set_interrupt(GPIOB, GPIO_2, INT_ALL_EDGE);  //MOET pin 0 zijn voor EXTI 0. Pin nummer = EXTI nummer
+    set_interrupt(GPIOB, GPIO_2, INT_ALL_EDGE, GPIO_PULL_NONE);  //MOET pin 0 zijn voor EXTI 0. Pin nummer = EXTI nummer
 }
