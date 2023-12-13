@@ -16,6 +16,8 @@
 #endif
 
 bool start = true; //Start of message flag
+bool bitStart = true; //Flag used for bit control
+bool control; 
 uint8_t bitIndex = 0;
 uint16_t lowDuration;
 uint8_t message[messageLength];
@@ -145,10 +147,11 @@ int validID(int received)
     {
         if (received == validIDs[i]) 
         {
+            DEBUGLOG("Valid ID");
             return 1; //Valid message
         }
     }
-    
+    DEBUGLOG("Invalid ID");
     return 0; //Invalid message
 }
 
@@ -159,11 +162,22 @@ int validMessage(int received)
     {
         if (received == validMessages[i]) 
         {
+            DEBUGLOG("Valid message");
             return 1; //Valid message
         }
     }
-    
+    DEBUGLOG("Invalid message");
     return 0; //Invalid message
+}
+
+void reset()
+{
+    switchPWM(TIM4, 0); //Stop timer
+    GPIOD->ODR &= ~GPIO_ODR_OD13;
+    EXTI->IMR |= 1<<0; //Enable EXTI interrupt
+    NVIC_EnableIRQ(EXTI0_IRQn);
+    TIM4->ARR = 65000;
+    TIM4->DIER &= TIM_DIER_UIE;  //Disable timer interrupt
 }
 
 void TIM4_IRQHandler(void) 
@@ -171,41 +185,52 @@ void TIM4_IRQHandler(void)
     DEBUGLOG("Got to TIM4 interrupt\r\n");
     GPIOD->ODR |= GPIO_ODR_OD11;
     GPIOD->ODR |= GPIO_ODR_OD13;
-    TIM4->ARR = lowDuration * 2;
+    TIM4->ARR = lowDuration;// * 2; //Was 1*bit time, now 0.5 to control bits
     
-    message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //Invert data
-    bitIndex++;
-    if(bitIndex == messageLength) 
+    if(bitStart)
     {
-        bitIndex = 0;
-        for(int i = 0; i<messageLength; i++)
-        {
-            receivedIR = receivedIR << 1;
-            receivedIR |= message[i];
-        }
-        receiveFlag = true;
-        switchPWM(TIM4, 0); //Stop timer
-        GPIOD->ODR &= ~GPIO_ODR_OD13;
-        EXTI->IMR |= 1<<0; //Enable EXTI interrupt
-        NVIC_EnableIRQ(EXTI0_IRQn);
-        TIM4->ARR = 65000;
-        TIM4->DIER &= TIM_DIER_UIE;  //Disable this interrupt
+        control = gpio_read(GPIOD, GPIO_0);
+        bitStart = false;
+    }else{
 
-        int receivedID = receivedIR & 0b11110000; //extract bit 7-4
-        int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
-
-        if(validID(receivedID)) //Checking if received ID is valid
+        if(control != gpio_read(GPIOD, GPIO_0))//Check if bit is valid
         {
-            DEBUGLOG("Valid ID");
+            message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //Invert data
         }else{
-            DEBUGLOG("Invalid ID");
+            reset();
         }
 
-        if(validMessage(receivedMessage)) //Checking if received message is valid
+        bitIndex++;
+        bitStart = true;
+        if(bitIndex == messageLength) 
         {
-            DEBUGLOG("Valid message");
-        }else{
-            DEBUGLOG("Invalid message");
+            bitIndex = 0;
+            for(int i = 0; i<messageLength; i++)
+            {
+                receivedIR = receivedIR << 1;
+                receivedIR |= message[i];
+            }
+
+            receiveFlag = true;
+
+            int receivedID = receivedIR & 0b11110000; //extract bit 7-4
+            int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
+
+            if(validID(receivedID)) //Checking if received ID is valid
+            {
+                DEBUGLOG("Valid ID");
+            }else{
+                DEBUGLOG("Invalid ID");
+            }
+
+            if(validMessage(receivedMessage)) //Checking if received message is valid
+            {
+                DEBUGLOG("Valid message");
+            }else{
+                DEBUGLOG("Invalid message");
+            }
+
+            reset();
         }
     }
     GPIOD->ODR &= ~GPIO_ODR_OD11;
