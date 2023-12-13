@@ -8,6 +8,8 @@
 
 #include "user_interface.h"
 
+#define debounceCount 7500
+
 #define messageLength 12
 #define DEBUG
 
@@ -38,24 +40,24 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate, uint8_t pu
 
 
     uint8_t reg = pin >> 2;
-    SYSCFG->EXTICR[reg] &= ~(SYSCFG_EXTICR1_EXTI0);  // Clear EXTI selection
+    //SYSCFG->EXTICR[reg] &= ~(SYSCFG_EXTICR1_EXTI0);  // Clear EXTI selection
     // SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PD;
 
     if(port == GPIOA) // Only works for pin 0
     {
-        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PA << ((pin % 4) << 2);
+        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PA << (4 * (pin % 4));
 //        DEBUGLOG("EXTI line 0 set to use port A\r\n");
     }else if(port == GPIOB)
     {
-        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PB << ((pin % 4) << 2);
+        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PB << (4 * (pin % 4));
         //DEBUGLOG("EXTI line 0 set to use port B\r\n");
     }else if(port == GPIOC)
     {
-        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PC << ((pin % 4) << 2);
+        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PC << (4 * (pin % 4));
 //        DEBUGLOG("EXTI line 0 set to use port C\r\n");
     }else if(port == GPIOD)
     {
-        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PD << ((pin % 4) << 2);
+        SYSCFG->EXTICR[reg] |= SYSCFG_EXTICR1_EXTI0_PD << (4 * (pin % 4));
 //        DEBUGLOG("EXTI line 0 set to use port D\r\n");
     }
 
@@ -65,7 +67,7 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate, uint8_t pu
     EXTI->RTSR |= (!!(edgeRate & 0b01))<<pin;  //rising edge
     EXTI->FTSR |= (!!(edgeRate & 0b10))<<pin; //falling
 
-    EXTI->PR |= 0xFFFF;
+    //EXTI->PR |= 0xFFFF;
 
     //set IRQ priority in NVIC
 	//Enable interrupt in NVIC
@@ -105,7 +107,7 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate, uint8_t pu
     	NVIC_EnableIRQ(EXTI15_10_IRQn);
     }
 
-    EXTI->PR |= 0xFFFF;
+    EXTI->PR |= (0x01 << pin);
 }
 
 void UI_interrupt(void)
@@ -113,65 +115,80 @@ void UI_interrupt(void)
 
 
 	__disable_irq();
-	EXTI->PR = 0xFFFF; // reset all pending IO button IRQ flags
 
-	enum inputs input;
-
-/*
-	// below is test code
-	iterate_UI(CW);
-	while (gpio_read(GPIOA, GPIO_0));
-
-	while (!gpio_read(GPIOA, GPIO_0));
-	iterate_UI(CW);
-	while (gpio_read(GPIOA, GPIO_0));
-
-	while (!gpio_read(GPIOA, GPIO_0));
-	iterate_UI(CCW);
-	while (gpio_read(GPIOA, GPIO_0));
-
-	while (!gpio_read(GPIOA, GPIO_0));
-	iterate_UI(PB);
-	while (gpio_read(GPIOA, GPIO_0));
-*/
+	enable_UI();
 
 	while(1)
 	{
 		// wacht tot een van de knoppen is ingedrukt
-		while (gpio_read(GPIOC, 7) | gpio_read(GPIOC, 8) | gpio_read(GPIOC, 9));
+		//while (!(gpio_read(GPIOC, 7) | gpio_read(GPIOC, 8) | gpio_read(GPIOC, 9)));
 
-		//bepaal welke knop is ingedrukt
-		if (gpio_read(GPIOC, 7))
+		enum inputs input_button;
+
+		uint16_t CW_count = 0;
+		uint16_t PB_count = 0;
+		uint16_t CCW_count = 0;
+
+		bool bouncy = true;
+
+		while (bouncy)
 		{
-			input = CCW;
-		}
-		else if (gpio_read(GPIOC, 8))
-		{
-			input = PB;
-		}
-		else if (gpio_read(GPIOC, 9))
-		{
-			input = CW;
-		}
-		else
-		{
-			/* Clear screen */
-			SSD1306_Fill(SSD1306_COLOR_BLACK); // make the screen black
-			/* Update screen */
-			SSD1306_UpdateScreen(); // actually display the black screen
-			break;
+			if (gpio_read(GPIOC, 7))
+			{
+				++CCW_count;
+
+				if (CCW_count >= debounceCount)
+				{
+					input_button = CCW;
+					bouncy = false;
+				}
+			}
+			else if (CCW_count > 0)
+			{
+				--CCW_count;
+			}
+
+			if (gpio_read(GPIOC, 8))
+			{
+				++PB_count;
+
+				if (PB_count >= debounceCount)
+				{
+					input_button = PB;
+					bouncy = false;
+				}
+			}
+			else if (PB_count > 0)
+			{
+				--PB_count;
+			}
+
+			if (gpio_read(GPIOC, 9))
+			{
+				++CW_count;
+				if (CW_count >= debounceCount)
+				{
+					input_button = CW;
+					bouncy = false;
+				}
+			}
+			else if (CW_count > 0)
+			{
+				--CW_count;
+			}
+
 		}
 
-		if (iterate_UI(input)) // verwerkt de input in de UI
+		if (iterate_UI(input_button)) // verwerkt de input in de UI
 		{
 			break; // als iterate_UI 1 returned is de gebruiker klaar met de UI
 		}
 
 	}
 
-
-	EXTI->PR |= 0xFFFF; // reset all pending IO button IRQ flags
 	__enable_irq();
+	EXTI->PR |= (0x01 << 7) | (0x01 << 8) | (0x01 << 9); // reset all pending IO button IRQ flags
+
 }
 
 
@@ -181,7 +198,7 @@ void EXTI0_IRQHandler(void)
 	UI_interrupt();
 }
 
-void EXTI9_4_IRQHandler(void)
+void EXTI9_5_IRQHandler(void)
 {
 	UI_interrupt();
 }

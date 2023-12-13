@@ -30,6 +30,8 @@ struct setting_struct { // elke instelling word in zo'n struct gedefinieerd
 
 enum inputs{CW, CCW, PB}; // input kan; een clockwise rotatie-, counter-clockwise rotatie- of een push button signaal zijn
 
+void enable_UI(void);
+
 bool iterate_UI(enum inputs input);
 
 void init_settings(void);

@@ -160,6 +160,11 @@ void display_setting(uint8_t n) // display the current setting and it's value
 	SSD1306_UpdateScreen(); // display all this on the screen
 }
 
+void enable_UI(void)
+{
+	display_menu(settings_current); // display the menu
+}
+
 bool iterate_UI(enum inputs input) // process input
 {
 	if (settings_menu) // are we currently in the menu?
