@@ -8,8 +8,6 @@
 
 #include "user_interface.h"
 
-#define debounceCount 7500
-
 #define messageLength 12
 #define DEBUG
 
@@ -110,86 +108,7 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate, uint8_t pu
     EXTI->PR |= (0x01 << pin);
 }
 
-void UI_interrupt(void)
-{
 
-
-	__disable_irq();
-
-	enable_UI();
-
-	while(1)
-	{
-		// wacht tot een van de knoppen is ingedrukt
-		//while (!(gpio_read(GPIOC, 7) | gpio_read(GPIOC, 8) | gpio_read(GPIOC, 9)));
-
-		enum inputs input_button;
-
-		uint16_t CW_count = 0;
-		uint16_t PB_count = 0;
-		uint16_t CCW_count = 0;
-
-		bool bouncy = true;
-
-		while (bouncy)
-		{
-			if (gpio_read(GPIOC, 7))
-			{
-				++CCW_count;
-
-				if (CCW_count >= debounceCount)
-				{
-					input_button = CCW;
-					bouncy = false;
-				}
-			}
-			else if (CCW_count > 0)
-			{
-				--CCW_count;
-			}
-
-			if (gpio_read(GPIOC, 8))
-			{
-				++PB_count;
-
-				if (PB_count >= debounceCount)
-				{
-					input_button = PB;
-					bouncy = false;
-				}
-			}
-			else if (PB_count > 0)
-			{
-				--PB_count;
-			}
-
-			if (gpio_read(GPIOC, 9))
-			{
-				++CW_count;
-				if (CW_count >= debounceCount)
-				{
-					input_button = CW;
-					bouncy = false;
-				}
-			}
-			else if (CW_count > 0)
-			{
-				--CW_count;
-			}
-
-		}
-
-		if (iterate_UI(input_button)) // verwerkt de input in de UI
-		{
-			break; // als iterate_UI 1 returned is de gebruiker klaar met de UI
-		}
-
-	}
-
-	__enable_irq();
-	EXTI->PR |= (0x01 << 7) | (0x01 << 8) | (0x01 << 9); // reset all pending IO button IRQ flags
-
-}
 
 void EXTI9_5_IRQHandler(void)
 {
