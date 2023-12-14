@@ -191,13 +191,6 @@ void UI_interrupt(void)
 
 }
 
-
-
-void EXTI0_IRQHandler(void)
-{
-	UI_interrupt();
-}
-
 void EXTI9_5_IRQHandler(void)
 {
 	UI_interrupt();

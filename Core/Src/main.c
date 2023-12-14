@@ -86,6 +86,7 @@ void beacon_main(void) {
 	//DEBUGLOG("initializing IR LED GPIO");
 	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
+
 	//DEBUGLOG("initializing UI button GPIO's");
 	init_gpio(GPIOC, GPIO_7, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
 	set_interrupt(GPIOC, GPIO_8, INT_RISING_EDGE, GPIO_PULL_DOWN);
@@ -99,14 +100,15 @@ void beacon_main(void) {
 	SSD1306_Init();
 	init_settings();
 
+
+
 	gpio_toggle(GPIOA, GPIO_0);
 	initTIMIRS(50, 38000);
 	IRInit(0b00110, Send);
-	for(volatile uint32_t j = 0; j<400000; j++) {
-	}
-	IRSend(0b011010);
 
 	while(1){
-        __WFI();
+		for(volatile uint32_t j = 0; j<400000; j++){};
+		IRSend(0b011010);
+        //__WFI();
 	}
 }
