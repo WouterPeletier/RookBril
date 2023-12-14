@@ -8,7 +8,6 @@
 #include "user_interface.h"
 
 #define pushDebounceCount 1000
-#define rotaryDebounceCount 1
 
 #define settings_count 4
 
@@ -31,9 +30,7 @@ void UI_interrupt(void)
 	{
 		enum inputs input_button;
 
-		uint16_t ROTA_count = 0;
 		uint16_t PB_count = 0;
-		uint16_t ROTB_count = 0;
 
 		bool bouncy = true;
 
@@ -43,19 +40,10 @@ void UI_interrupt(void)
 			bool PB_state = gpio_read(GPIOC, 8);
 			bool ROTB_state = gpio_read(GPIOC, 9);
 
-			if (ROTA_state)
+			if (ROTA_state & !(ROTB_state))
 			{
-				++ROTA_count;
-
-				if ((ROTA_count >= rotaryDebounceCount) && ROTB_count < rotaryDebounceCount)
-				{
-					input_button = CCW;
-					bouncy = false;
-				}
-			}
-			else if (ROTA_count > 0)
-			{
-				--ROTA_count;
+				input_button = CCW;
+				bouncy = false;
 			}
 
 			if (PB_state)
@@ -74,18 +62,10 @@ void UI_interrupt(void)
 				--PB_count;
 			}
 
-			if (ROTB_state)
+			if (ROTB_state & !(ROTA_state))
 			{
-				++ROTB_count;
-				if ((ROTB_count >= rotaryDebounceCount) && ROTA_count < rotaryDebounceCount)
-				{
-					input_button = CW;
-					bouncy = false;
-				}
-			}
-			else if (ROTB_count > 0)
-			{
-				--ROTB_count;
+				input_button = CW;
+				bouncy = false;
 			}
 		}
 
@@ -227,12 +207,12 @@ void toggle_transmission(bool* exit, struct setting_struct* setting) // function
 {
 	if (transmit)
 	{
-		strcpy(setting->name, "enable");
+		strcpy(setting->name, "start IR");
 		transmit = 0;
 	}
 	else
 	{
-		strcpy(setting->name, "disable");
+		strcpy(setting->name, "stop IR");
 		transmit = 1;
 	}
 
@@ -250,7 +230,7 @@ void init_settings(void) // create all desired settings and insert them into the
 	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
 	settings[1] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
 	settings[2] = new_setting("ID", &Address, 15, 0, 0); // used to pass the desired ID of this beacon
-	settings[3] = new_setting("enable", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
+	settings[3] = new_setting("start IR", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
 }
 
 void enable_UI(void)
