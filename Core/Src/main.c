@@ -24,8 +24,8 @@
 
 
 #define Receiving
-int32_t Address = 1; //Address tussen 0 en 32
-int32_t PDLC_intensity = 0;
+int8_t Address = 1; //Address tussen 0 en 32
+int8_t PDLC_intensity = 0;
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
@@ -93,8 +93,8 @@ void beacon_main(void) {
 	set_interrupt(GPIOC, GPIO_9, INT_RISING_EDGE, GPIO_PULL_DOWN);
 
 	//DEBUGLOG("initializing I2C GPIO's");
-	init_gpio(GPIOB, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
-	init_gpio(GPIOB, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH);
+	init_gpio(GPIOB, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH); // scl
+	init_gpio(GPIOB, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH); // sda
 
 	//DEBUGLOG("initializing I2C and display driver");
 	SSD1306_Init();
@@ -108,7 +108,8 @@ void beacon_main(void) {
 
 	while(1){
 		for(volatile uint32_t j = 0; j<400000; j++){};
-		IRSend(0b011010);
+		IRSend(0b110011);
+		//IRSend( ((Address << 4) & 0b110000) | (PDLC_intensity & 0b1111) );
         //__WFI();
 	}
 }

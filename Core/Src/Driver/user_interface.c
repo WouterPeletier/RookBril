@@ -2,13 +2,13 @@
 #include "interrupts.h"
 #include <stdbool.h>
 #include <string.h>
-
+#include "gpio.h"
 #include "fonts.h"
 #include "ssd1306.h"
 #include "user_interface.h"
 
-#define debounceCount 7500
-
+#define pushDebounceCount 1000
+#define rotaryDebounceCount 100
 
 extern uint8_t PDLC_intensity;
 extern uint8_t Address;
@@ -47,36 +47,41 @@ void UI_interrupt(void)
 
 		enum inputs input_button;
 
-		uint16_t CW_count = 0;
+		uint16_t ROTA_count = 0;
 		uint16_t PB_count = 0;
-		uint16_t CCW_count = 0;
+		uint16_t ROTB_count = 0;
 
 		bool bouncy = true;
 
 		while (bouncy)
 		{
-			if (gpio_read(GPIOC, 7))
-			{
-				++CCW_count;
+			bool ROTA_state = gpio_read(GPIOC, 7);
+			bool PB_state = gpio_read(GPIOC, 8);
+			bool ROTB_state = gpio_read(GPIOC, 9);
 
-				if (CCW_count >= debounceCount)
+			if (ROTA_state)
+			{
+				++ROTA_count;
+
+				if ((ROTA_count >= rotaryDebounceCount) && ROTB_count < rotaryDebounceCount)
 				{
 					input_button = CCW;
 					bouncy = false;
 				}
 			}
-			else if (CCW_count > 0)
+			else if (ROTA_count > 0)
 			{
-				--CCW_count;
+				--ROTA_count;
 			}
 
-			if (gpio_read(GPIOC, 8))
+			if (PB_state)
 			{
 				++PB_count;
 
-				if (PB_count >= debounceCount)
+				if (PB_count >= pushDebounceCount)
 				{
 					input_button = PB;
+					while (gpio_read(GPIOC, 8));
 					bouncy = false;
 				}
 			}
@@ -85,18 +90,18 @@ void UI_interrupt(void)
 				--PB_count;
 			}
 
-			if (gpio_read(GPIOC, 9))
+			if (ROTB_state)
 			{
-				++CW_count;
-				if (CW_count >= debounceCount)
+				++ROTB_count;
+				if ((ROTB_count >= rotaryDebounceCount) && ROTA_count < rotaryDebounceCount)
 				{
 					input_button = CW;
 					bouncy = false;
 				}
 			}
-			else if (CW_count > 0)
+			else if (ROTB_count > 0)
 			{
-				--CW_count;
+				--ROTB_count;
 			}
 
 		}
@@ -182,6 +187,9 @@ struct setting_struct new_setting(char* name, int32_t* value_ptr, int32_t value_
 
 	new_setting.value_max = value_max; // assign the maximum value of the setting
 	new_setting.value_min = value_min; // assign the minimum value of the setting
+
+	*(new_setting.value_ptr) = new_setting.value_min;
+
 	new_setting.val_digit_count = 1; // preset the val_digit_count to 1 (the minimum value for this member)
 
 	new_setting.fun_ptr = fun_ptr; // assign the function pointer's address
@@ -193,11 +201,10 @@ struct setting_struct new_setting(char* name, int32_t* value_ptr, int32_t value_
 
 void init_settings(void) // create all desired settings and insert them into the global settings array
 {
+
 	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
-
-	settings[1] = new_setting("intensity", &PDLC_intensity, 31, 0, 0); // used to pass the desired intensity of the system
-	settings[2] = new_setting("ID", &Address, 31, 0, 0); // used to pass the desired ID of this beacon
-
+	settings[1] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
+	settings[2] = new_setting("ID", &Address, 3, 0, 0); // used to pass the desired ID of this beacon
 }
 
 void display_menu(uint8_t n) // display the settings menu with the current, previous and next selected setting and their values
