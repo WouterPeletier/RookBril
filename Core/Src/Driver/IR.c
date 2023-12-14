@@ -23,7 +23,7 @@
   #define DEBUGLOG(...)
 #endif
 
-#define lowDuration 600
+#define lowDuration 889
 
 extern bool sendFlag;
 uint8_t IRData[14];
@@ -36,9 +36,9 @@ void IRInit(uint8_t address, IRMode mode) {
 		IRData[1] = 1; //Field bit
 		IRData[2] = 1; //Control bit
 		int l = 0;
-		for(int j=4; j>=0; j--) {
-			IRData[7-j] = (address >> j) & 1;
-		}
+//		for(int j=4; j>=0; j--) {
+//			IRData[7-j] = (address >> j) & 1;
+//		}
 		int tim2f = (1000000/lowDuration);
 		initTIMIRGeneric(50, tim2f); //Generic 600us timer
 		initTIMIRS(50, 38000); //Send timer op 38kHz
@@ -49,13 +49,13 @@ void IRInit(uint8_t address, IRMode mode) {
 	}
 }
 
-void IRSend(uint8_t data) {
-	if(data >= 64) {
+void IRSend(uint16_t data) {
+	if(data & 0b1111100000000000) {
 		return;
 	}
 	sendFlag = true;
 	i = 0;
-	for(int j = 5; j>=0; j--) {
+	for(int j = 10; j>=0; j--) {
 		IRData[13-j] = (data >> j) & 1;
 	}
 	switchPWM(TIM2, 1);

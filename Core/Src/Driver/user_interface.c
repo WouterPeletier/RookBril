@@ -8,43 +8,27 @@
 #include "user_interface.h"
 
 #define pushDebounceCount 1000
-#define rotaryDebounceCount 100
+#define rotaryDebounceCount 1
 
+#define settings_count 4
+
+
+extern bool transmit;
 extern uint8_t PDLC_intensity;
 extern uint8_t Address;
-
-/*struct setting_struct {
-  char name[max_string_length + 1];
-  char display_string[max_string_length + 1];
-
-  uint32_t value_max;
-  uint32_t value_min;
-  uint32_t* value_ptr;
-  int val_digit_count;
-
-  void* fun_ptr;
-};*/
 
 struct setting_struct settings[settings_count];
 uint8_t settings_current = 0;
 bool settings_menu = true;
 
-//enum inputs{CW, CCW, PB}; // input kan; een clockwise rotatie-, counter-clockwise rotatie- of een push button signaal zijn
-
-
 void UI_interrupt(void)
 {
-
-
 	__disable_irq();
 
 	enable_UI();
 
 	while(1)
 	{
-		// wacht tot een van de knoppen is ingedrukt
-		//while (!(gpio_read(GPIOC, 7) | gpio_read(GPIOC, 8) | gpio_read(GPIOC, 9)));
-
 		enum inputs input_button;
 
 		uint16_t ROTA_count = 0;
@@ -103,7 +87,6 @@ void UI_interrupt(void)
 			{
 				--ROTB_count;
 			}
-
 		}
 
 		if (iterate_UI(input_button)) // verwerkt de input in de UI
@@ -112,25 +95,9 @@ void UI_interrupt(void)
 		}
 
 	}
-
 	__enable_irq();
 	EXTI->PR |= (0x01 << 7) | (0x01 << 8) | (0x01 << 9); // reset all pending IO button IRQ flags
-
 }
-
-void exit_UI(bool* exit) // function to exit the UI
-{
-	/* Clear screen */
-	SSD1306_Fill(SSD1306_COLOR_BLACK); // make the screen black
-
-	/* Update screen */
-	SSD1306_UpdateScreen(); // actually display the black screen
-
-	*exit = true; // signal that we can exit the UI
-
-	return;
-}
-
 
 struct setting_struct generate_display_string(struct setting_struct setting) // this function places the name and the value of a setting in a string to be displayed in the settings menu
 {
@@ -199,14 +166,6 @@ struct setting_struct new_setting(char* name, int32_t* value_ptr, int32_t value_
 	return new_setting; // finito
 }
 
-void init_settings(void) // create all desired settings and insert them into the global settings array
-{
-
-	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
-	settings[1] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
-	settings[2] = new_setting("ID", &Address, 3, 0, 0); // used to pass the desired ID of this beacon
-}
-
 void display_menu(uint8_t n) // display the settings menu with the current, previous and next selected setting and their values
 {
 	SSD1306_Fill (0); // clear screen
@@ -251,6 +210,49 @@ void display_setting(uint8_t n) // display the current setting and it's value
 	SSD1306_UpdateScreen(); // display all this on the screen
 }
 
+void exit_UI(bool* exit, struct setting_struct setting) // function to exit the UI
+{
+	/* Clear screen */
+	SSD1306_Fill(SSD1306_COLOR_BLACK); // make the screen black
+
+	/* Update screen */
+	SSD1306_UpdateScreen(); // actually display the black screen
+
+	*exit = true; // signal that we can exit the UI
+
+	return;
+}
+
+void toggle_transmission(bool* exit, struct setting_struct* setting) // function to toggle the IR transmission
+{
+	if (transmit)
+	{
+		strcpy(setting->name, "enable");
+		transmit = 0;
+	}
+	else
+	{
+		strcpy(setting->name, "disable");
+		transmit = 1;
+	}
+
+	*(setting) = generate_display_string(*(setting));
+	display_menu(settings_current);
+
+	*exit = false; // signal that we can NOT exit the UI
+
+	return;
+}
+
+void init_settings(void) // create all desired settings and insert them into the global settings array
+{
+
+	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
+	settings[1] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
+	settings[2] = new_setting("ID", &Address, 15, 0, 0); // used to pass the desired ID of this beacon
+	settings[3] = new_setting("enable", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
+}
+
 void enable_UI(void)
 {
 	display_menu(settings_current); // display the menu
@@ -279,7 +281,7 @@ bool iterate_UI(enum inputs input) // process input
 			  else // the setting has a function as opposed to a value
 			  {
 				  	bool exit = 0; // the function can exit the UI by making exit high
-					(*(settings[settings_current].fun_ptr))(&exit); // execute the function with exit's address as an argument
+					(*(settings[settings_current].fun_ptr))(&exit, &(settings[settings_current])); // execute the function with exit's address as an argument
 					return exit; // return exit
 			  }
 			  break;

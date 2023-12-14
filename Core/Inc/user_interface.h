@@ -10,7 +10,6 @@
 
 #define settings_font Font_11x18
 #define max_string_length 10 // = SSD1306_WIDTH / settings_font.FontWidth - 1
-#define settings_count 3
 
 /*void display_menu(uint8_t n);
 void display_setting(uint8_t n);*/
@@ -24,7 +23,7 @@ struct setting_struct { // elke instelling word in zo'n struct gedefinieerd
   int32_t* value_ptr; // pointer die wijst naar de value van de instelling
   int val_digit_count; // het aantal cijfers in de huidige waarde van de instelling
 
-  void (*fun_ptr)(bool* bool_ptr); // eventuele pointer naar een functie van de instelling
+  void (*fun_ptr)(bool* bool_ptr, void* setting); // eventuele pointer naar een functie van de instelling
   // je kan alleen een instelbare waarde hebben of alleen een functie die wordt uitgevoerd bij deze instelling.
 };
 

@@ -24,8 +24,9 @@
 
 
 #define Receiving
-int8_t Address = 1; //Address tussen 0 en 32
-int8_t PDLC_intensity = 0;
+int32_t Address = 1; //Address tussen 0 en 32
+int32_t PDLC_intensity = 0;
+bool transmit = 0;
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
@@ -36,6 +37,7 @@ uint32_t sendIntervalms = 1000; //De tijd in ms hoelang het duurt tot de volgend
 uint16_t receivedIR;
 bool receiveFlag = false;
 bool sendFlag = false;
+
 
 void beacon_main(void);
 void bril_main(void);
@@ -81,11 +83,10 @@ void bril_main(void)
 
 void beacon_main(void) {
 	//DEBUGLOG("Running Beacon Code");
-	IRMsg->IRAddress = 1;
+	IRMsg->IRAddress = Address;
 
 	//DEBUGLOG("initializing IR LED GPIO");
 	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
-
 
 	//DEBUGLOG("initializing UI button GPIO's");
 	init_gpio(GPIOC, GPIO_7, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
@@ -100,16 +101,21 @@ void beacon_main(void) {
 	SSD1306_Init();
 	init_settings();
 
-
-
 	gpio_toggle(GPIOA, GPIO_0);
 	initTIMIRS(50, 38000);
 	IRInit(0b00110, Send);
 
 	while(1){
-		for(volatile uint32_t j = 0; j<400000; j++){};
-		IRSend(0b110011);
-		//IRSend( ((Address << 4) & 0b110000) | (PDLC_intensity & 0b1111) );
-        //__WFI();
+		if (transmit)
+		{
+			for(volatile uint32_t j = 0; j<400000; j++);
+			IRSend( ((Address << 7) & 0b1111000000) | (PDLC_intensity & 0b00000111111) );
+		}
+		else
+		{
+			__WFI();
+		}
 	}
+        //
 }
+
