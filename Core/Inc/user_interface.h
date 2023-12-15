@@ -8,11 +8,13 @@
 #ifndef INC_USER_INTERFACE_H_
 #define INC_USER_INTERFACE_H_
 
+#define inputPort GPIOC
+#define ROTA_pin	GPIO_7
+#define PB_pin		GPIO_8
+#define ROTB_pin	GPIO_9
+
 #define settings_font Font_11x18
 #define max_string_length 10 // = SSD1306_WIDTH / settings_font.FontWidth - 1
-
-/*void display_menu(uint8_t n);
-void display_setting(uint8_t n);*/
 
 struct setting_struct { // elke instelling word in zo'n struct gedefinieerd
   char name[max_string_length + 1]; // naam van de instelling

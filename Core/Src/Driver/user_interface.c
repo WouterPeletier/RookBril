@@ -1,3 +1,9 @@
+/*
+ * user_interface.h
+ *
+ *  Created on: Dec 8, 2023
+ *      Author: gino
+ */
 #include "stm32f4xx.h"
 #include "interrupts.h"
 #include <stdbool.h>
@@ -6,11 +12,6 @@
 #include "fonts.h"
 #include "ssd1306.h"
 #include "user_interface.h"
-
-#define inputPort GPIOC
-#define ROTA_pin	7
-#define PB_pin		8
-#define ROTB_pin	9
 
 #define pushDebounceCount 1000
 

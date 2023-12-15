@@ -89,9 +89,10 @@ void beacon_main(void) {
 	init_gpio(GPIOA, GPIO_0, GPIO_MODER_ALT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_NONE, GPIO_OSPEEDR_HIGH);
 
 	//DEBUGLOG("initializing UI button GPIO's");
-	init_gpio(GPIOC, GPIO_7, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
-	set_interrupt(GPIOC, GPIO_8, INT_RISING_EDGE, GPIO_PULL_DOWN);
-	set_interrupt(GPIOC, GPIO_9, INT_RISING_EDGE, GPIO_PULL_DOWN);
+	//init_gpio(inputPort, ROTA_pin, GPIO_MODER_INPUT, GPIO_ALTFUNC_0, GPIO_OTYPER_PUSHPULL, GPIO_PULL_DOWN, GPIO_OSPEEDR_LOW);
+	set_interrupt(inputPort, ROTA_pin, INT_RISING_EDGE, GPIO_PULL_DOWN);
+	set_interrupt(inputPort, PB_pin, INT_RISING_EDGE, GPIO_PULL_DOWN);
+	set_interrupt(inputPort, ROTB_pin, INT_RISING_EDGE, GPIO_PULL_DOWN);
 
 	//DEBUGLOG("initializing I2C GPIO's");
 	init_gpio(GPIOB, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH); // scl
@@ -109,7 +110,7 @@ void beacon_main(void) {
 		if (transmit)
 		{
 			for(volatile uint32_t j = 0; j<400000; j++);
-			IRSend( ((Address << 4) & 0b11110000) | (PDLC_intensity & 0b00001111) );
+			IRSend( 0b11100000000 | ((Address << 4) & 0b11110000) | (PDLC_intensity & 0b00001111) );
 		}
 		else
 		{
