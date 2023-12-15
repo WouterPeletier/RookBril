@@ -26,7 +26,7 @@
 #define Receiving
 int32_t Address = 1; //Address tussen 0 en 32
 int32_t PDLC_intensity = 0;
-bool transmit = 0;
+bool transmit = true;
 
 IRMode IRSendReceive = Send;
 IRPacket * IRMsg = {0};
@@ -110,7 +110,7 @@ void beacon_main(void) {
 		if (transmit)
 		{
 			for(volatile uint32_t j = 0; j<400000; j++);
-			IRSend( 0b11100000000 | ((Address << 4) & 0b11110000) | (PDLC_intensity & 0b00001111) );
+			IRSend(((Address << 4) & 0b11110000) | (PDLC_intensity & 0b00001111));
 		}
 		else
 		{

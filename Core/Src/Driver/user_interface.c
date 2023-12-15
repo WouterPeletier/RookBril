@@ -13,11 +13,9 @@
 #include "ssd1306.h"
 #include "user_interface.h"
 
-#define pushDebounceCount 1000
+#define pushDebounceCount 5000
 
 #define settings_count 4
-
-
 
 
 extern bool transmit;
@@ -59,7 +57,6 @@ void UI_interrupt(void)
 				{
 					input_button = CW;
 				}
-
 				bouncy = false;
 			}
 
@@ -70,7 +67,7 @@ void UI_interrupt(void)
 				if (PB_count >= pushDebounceCount)
 				{
 					input_button = PB;
-					while (gpio_read(GPIOC, 8));
+					//while (gpio_read(GPIOC, 8));
 					bouncy = false;
 				}
 			}
@@ -241,7 +238,7 @@ void init_settings(void) // create all desired settings and insert them into the
 {
 
 	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
-	settings[1] = new_setting("start IR", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
+	settings[1] = new_setting("stop IR", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
 	settings[2] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
 	settings[3] = new_setting("ID", &Address, 15, 0, 0); // used to pass the desired ID of this beacon
 
