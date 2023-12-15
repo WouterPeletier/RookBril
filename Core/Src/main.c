@@ -109,7 +109,7 @@ void beacon_main(void) {
 		if (transmit)
 		{
 			for(volatile uint32_t j = 0; j<400000; j++);
-			IRSend( ((Address << 7) & 0b1111000000) | (PDLC_intensity & 0b00000111111) );
+			IRSend( ((Address << 4) & 0b11110000) | (PDLC_intensity & 0b00001111) );
 		}
 		else
 		{

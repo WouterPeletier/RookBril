@@ -7,9 +7,16 @@
 #include "ssd1306.h"
 #include "user_interface.h"
 
+#define inputPort GPIOC
+#define ROTA_pin	7
+#define PB_pin		8
+#define ROTB_pin	9
+
 #define pushDebounceCount 1000
 
 #define settings_count 4
+
+
 
 
 extern bool transmit;
@@ -36,13 +43,22 @@ void UI_interrupt(void)
 
 		while (bouncy)
 		{
-			bool ROTA_state = gpio_read(GPIOC, 7);
-			bool PB_state = gpio_read(GPIOC, 8);
-			bool ROTB_state = gpio_read(GPIOC, 9);
+			bool ROTA_state = gpio_read(inputPort, ROTA_pin);
+			bool PB_state = gpio_read(inputPort, PB_pin);
+			bool ROTB_state = gpio_read(inputPort, ROTB_pin);
 
-			if (ROTA_state & !(ROTB_state))
+			if (ROTA_state ^ ROTB_state)
 			{
-				input_button = CCW;
+				if (ROTA_state)
+				{
+					input_button = CCW;
+
+				}
+				else
+				{
+					input_button = CW;
+				}
+
 				bouncy = false;
 			}
 
@@ -62,11 +78,7 @@ void UI_interrupt(void)
 				--PB_count;
 			}
 
-			if (ROTB_state & !(ROTA_state))
-			{
-				input_button = CW;
-				bouncy = false;
-			}
+
 		}
 
 		if (iterate_UI(input_button)) // verwerkt de input in de UI
@@ -76,7 +88,7 @@ void UI_interrupt(void)
 
 	}
 	__enable_irq();
-	EXTI->PR |= (0x01 << 7) | (0x01 << 8) | (0x01 << 9); // reset all pending IO button IRQ flags
+	EXTI->PR |= (0x01 << ROTA_pin) | (0x01 << PB_pin) | (0x01 << ROTB_pin); // reset all pending IO button IRQ flags
 }
 
 struct setting_struct generate_display_string(struct setting_struct setting) // this function places the name and the value of a setting in a string to be displayed in the settings menu
@@ -228,12 +240,13 @@ void init_settings(void) // create all desired settings and insert them into the
 {
 
 	settings[0] = new_setting("exit UI", 0, 0, 0, &exit_UI); // used to exit the menu
-	settings[1] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
-	settings[2] = new_setting("ID", &Address, 15, 0, 0); // used to pass the desired ID of this beacon
-	settings[3] = new_setting("start IR", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
+	settings[1] = new_setting("start IR", 0, 0, 0, &toggle_transmission); // should the system be enabled? (1 = transmit IR, 0 = do nothing lmao)
+	settings[2] = new_setting("intensity", &PDLC_intensity, 10, 0, 0); // used to pass the desired intensity of the system
+	settings[3] = new_setting("ID", &Address, 15, 0, 0); // used to pass the desired ID of this beacon
+
 }
 
-void enable_UI(void)
+void enable_UI(void) // display the menu
 {
 	display_menu(settings_current); // display the menu
 }
