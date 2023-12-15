@@ -18,6 +18,7 @@
 bool start = true; //Start of message flag
 bool bitStart = true; //Flag used for bit control
 bool control; 
+bool invalidFlag = false; //Flag used for message control
 uint8_t bitIndex = 0;
 uint16_t lowDuration;
 uint8_t message[messageLength];
@@ -80,64 +81,65 @@ void set_interrupt(GPIO_TypeDef* port, uint8_t pin, uint8_t edgeRate)
 void EXTI2_IRQHandler(void)
 {
     //Output pins used for debugging
-    if(gpio_read(GPIOB, GPIO_2) == 0) 
-    {
-        GPIOD->ODR &= ~GPIO_ODR_OD12;
-    } else {
-        GPIOD->ODR |= GPIO_ODR_OD12;
-    }
+    // if(gpio_read(GPIOB, GPIO_2) == 0) 
+    // {
+    //     GPIOD->ODR &= ~GPIO_ODR_OD12;
+    // } else {
+    //     GPIOD->ODR |= GPIO_ODR_OD12;
+    // }
 
     //Output pins used for debugging
-    if(gpio_read(GPIOB, GPIO_2)== 1 ) 
-    {
-        GPIOD->ODR &= ~GPIO_ODR_OD11;
-    } else {
-        GPIOD->ODR |= GPIO_ODR_OD11;
-    }
+    // if(gpio_read(GPIOB, GPIO_2)== 1 ) 
+    // {
+    //     GPIOD->ODR &= ~GPIO_ODR_OD11;
+    // } else {
+    //     GPIOD->ODR |= GPIO_ODR_OD11;
+    // }
     
-    if (EXTI->PR & EXTI_PR_PR0) 
+    //GPIOD->ODR ^= GPIO_ODR_OD12;
+    if(start)
     {
-        GPIOD->ODR ^= GPIO_ODR_OD12;
-        if(start)
+        if (!gpio_read(GPIOB, GPIO_2))//Check for falling edge
         {
-            if (gpio_read(GPIOD, GPIO_0) == 0)//Check for falling edge
-            {
-                GPIOD->ODR |= GPIO_ODR_OD14;
-                TIM4->CNT = 0;  //Make sure CNT register is 0
-                switchPWM(TIM4, 1); //Start timer TIM4
-                start = false;  //Set flag to false
-            }
-        }else {
-            //DEBUGLOG("Detected rising edge\r\n");
-            switchPWM(TIM4, 0); //Stop timer
-            lowDuration = TIM4->CNT; //Capture lowDuration 7112 = 889us, 4802 = 600 us
-            if(lowDuration < 4000) 
-            {
-                TIM4->CNT = 0;
-                switchPWM(TIM4, 1); //Start timer
-                EXTI->PR |= EXTI_PR_PR0;
-            } else if(lowDuration > 10000) {
-                TIM4->CNT = 0;
-                switchPWM(TIM4, 1); //Start timer
-                EXTI->PR |= EXTI_PR_PR0;
-            } else {
-            	if(6500 < lowDuration < 7600) { //lowDuration tussen 815us en 950us
-            		lowDuration = 7112; //lowDuration is 889us
-            	}
-                TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
-                TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
-                //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
-                EXTI->IMR &= 0<<0; //Disable this interrupt
-                NVIC_DisableIRQ(EXTI0_IRQn);
-                start = true;  //Reset start flag
-                GPIOD->ODR &= ~GPIO_ODR_OD14;
-                NVIC_EnableIRQ(TIM4_IRQn);
-                TIM4->CNT = 0;
-                switchPWM(TIM4, 1); //Start timer TIM4
-            }
+            //GPIOD->ODR |= GPIO_ODR_OD14;
+            TIM4->CNT = 0;  //Make sure CNT register is 0
+            switchPWM(TIM4, 1); //Start timer TIM4
+            start = false;  //Set flag to false
         }
+    }else {
+        //DEBUGLOG("Detected rising edge\r\n");
+        switchPWM(TIM4, 0); //Stop timer
+        lowDuration = TIM4->CNT; //Capture lowDuration 7112 = 889us, 4802 = 600 us
+        TIM4->CNT = 0;
+        /* LowDuration check uitgecomment voor testen*/
+        // lowDuration = 6480;
+        // if(lowDuration < 4000) 
+        // {
+        //     TIM4->CNT = 0;
+        //     switchPWM(TIM4, 1); //Start timer
+        //     EXTI->PR |= EXTI_PR_PR2;
+        // } else if(lowDuration > 10000) {
+        //     TIM4->CNT = 0;
+        //     switchPWM(TIM4, 1); //Start timer
+        //     EXTI->PR |= EXTI_PR_PR2;
+        // } else {
+        // 	if(lowDuration >= 6500 && lowDuration <= 7600) { //lowDuration tussen 815us en 950us
+        // 		lowDuration = 7112; //lowDuration is 889us
+        // 	}
+        //     lowDuration = 6480;
+            TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
+            TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
+            //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
+            EXTI->IMR &= 0<<0; //Disable this interrupt
+            NVIC_DisableIRQ(EXTI2_IRQn);
+            start = true;  //Reset start flag
+            //GPIOD->ODR &= ~GPIO_ODR_OD14;
+            NVIC_EnableIRQ(TIM4_IRQn);
+            switchPWM(TIM4, 1); //Start timer TIM4
+        // }
     }
-    EXTI->PR |= EXTI_PR_PR2; // Clear the EXTI line 0 pending flag
+
+    EXTI->PR |= EXTI_PR_PR2; // Clear the EXTI line 2 pending flag
 }
 
 int validID(int received)
@@ -172,67 +174,88 @@ int validMessage(int received)
 
 void reset()
 {
+    invalidFlag = false;
+    receivedIR = 0;
     switchPWM(TIM4, 0); //Stop timer
     GPIOD->ODR &= ~GPIO_ODR_OD13;
-    EXTI->IMR |= 1<<0; //Enable EXTI interrupt
-    NVIC_EnableIRQ(EXTI0_IRQn);
+    EXTI->IMR |= 1<<2; //Enable EXTI interrupt
+    NVIC_EnableIRQ(EXTI2_IRQn);
     TIM4->ARR = 65000;
     TIM4->DIER &= TIM_DIER_UIE;  //Disable timer interrupt
 }
 
 void TIM4_IRQHandler(void) 
 {
-    DEBUGLOG("Got to TIM4 interrupt\r\n");
-    GPIOD->ODR |= GPIO_ODR_OD11;
-    GPIOD->ODR |= GPIO_ODR_OD13;
-    TIM4->ARR = lowDuration;// * 2; //Was 1*bit time, now 0.5 to control bits
+    //DEBUGLOG("Got to TIM4 interrupt\r\n");
+    //GPIOD->ODR |= GPIO_ODR_OD11;
+    //GPIOD->ODR |= GPIO_ODR_OD13;
     
     if(bitStart)
     {
-        control = gpio_read(GPIOD, GPIO_0);
+        TIM4->ARR = lowDuration;// * 2; //Was 1*bit time, now 0.5 to control bits
+        control = gpio_read(GPIOB, GPIO_2);
         bitStart = false;
     }else{
 
-        if(control != gpio_read(GPIOD, GPIO_0))//Check if bit is valid
+        if(control != gpio_read(GPIOB, GPIO_2))//Check if bit is valid
         {
-            message[bitIndex] = 1-gpio_read(GPIOD, GPIO_0); //Invert data
+            GPIOD->ODR ^= GPIO_ODR_OD11;
+            message[bitIndex] = gpio_read(GPIOB, GPIO_2); //Invert data
         }else{
-            reset();
+            // DEBUGLOG("Invalid bit\r\n");
+            // // for(int i = 0; i < 400000; i++)
+            // // {}
+            // bitIndex = 0;
+            // reset();
+            invalidFlag = true;
         }
 
         bitIndex++;
         bitStart = true;
         if(bitIndex == messageLength) 
         {
+            if(!invalidFlag)
+            {
+                reset();
+                return;
+            }
             bitIndex = 0;
             for(int i = 0; i<messageLength; i++)
             {
                 receivedIR = receivedIR << 1;
                 receivedIR |= message[i];
+                uint8_t x =message[i]; 
+                DEBUGLOG("%d", x);
             }
-
+            DEBUGLOG("\n");
+            //DEBUGLOG("\r\n");
             receiveFlag = true;
 
-            int receivedID = receivedIR & 0b11110000; //extract bit 7-4
-            int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
+            unsigned int receivedID = (receivedIR & 0b11110000) >> 4; //extract bit 7-4
+            unsigned int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
+            // DEBUGLOG("LowDuration: %d", lowDuration);
+            // DEBUGLOG(" Received ID: %d", receivedID);
+            //DEBUGLOG(" Received: %d, %d \r\n",receivedID, receivedMessage);
 
-            if(validID(receivedID)) //Checking if received ID is valid
-            {
-                DEBUGLOG("Valid ID");
-            }else{
-                DEBUGLOG("Invalid ID");
-            }
+            /* ID check uitgecomment tijdens testen*/
+            // if(validID(receivedID)) //Checking if received ID is valid
+            // {
+            //     DEBUGLOG("Valid ID");
+            // }else{
+            //     DEBUGLOG("Invalid ID");
+            // }
 
-            if(validMessage(receivedMessage)) //Checking if received message is valid
-            {
-                DEBUGLOG("Valid message");
-            }else{
-                DEBUGLOG("Invalid message");
-            }
+            /* Message check uitgecomment tijdens testen*/
+            // if(validMessage(receivedMessage)) //Checking if received message is valid
+            // {
+            //     DEBUGLOG("Valid message");
+            // }else{
+            //     DEBUGLOG("Invalid message");
+            // }
 
             reset();
         }
     }
-    GPIOD->ODR &= ~GPIO_ODR_OD11;
+    //GPIOD->ODR &= ~GPIO_ODR_OD11;
     TIM4->SR &= ~TIM_SR_UIF;
 }
