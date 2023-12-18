@@ -51,8 +51,13 @@ int main(void)
     GPIOD->ODR &= ~(GPIO_ODR_OD12 | GPIO_ODR_OD14 | GPIO_ODR_OD11 | GPIO_ODR_OD13 | GPIO_ODR_OD9);
 
 
-    //init GPIO for I2c
-    //init OLED/I2C
+	//DEBUGLOG("initializing I2C GPIO's");
+	init_gpio(GPIOB, GPIO_6, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH); // scl
+	init_gpio(GPIOB, GPIO_7, GPIO_MODER_ALT, GPIO_ALTFUNC_4, GPIO_OTYPER_OPENDRAIN, GPIO_PULL_UP, GPIO_OSPEEDR_HIGH); // sda
+
+	//DEBUGLOG("initializing I2C and display driver");
+	SSD1306_Init();
+	init_settings();
 
     receive();
     // uint8_t PD13 = 0;
