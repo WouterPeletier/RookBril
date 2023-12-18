@@ -16,7 +16,7 @@
 #endif
 
 #ifdef DEBUG
- #define DEBUGLOG(...) printf(__VA_ARGS__)
+ #define DEBUGLOG(...) //printf(__VA_ARGS__)
 #else
  #define DEBUGLOG(...)
 #endif

@@ -6,11 +6,11 @@
 #include "pwm.h"
 #include <stdbool.h>
 
-#define messageLength 12
+#define messageLength 13
 #define DEBUG
 
 #ifdef DEBUG
- #define DEBUGLOG(...) printf(__VA_ARGS__)
+ #define DEBUGLOG(...) //printf(__VA_ARGS__)
 #else
  #define DEBUGLOG(...)
 #endif
@@ -89,13 +89,13 @@ void EXTI2_IRQHandler(void)
     // }
 
     //Output pins used for debugging
-    // if(gpio_read(GPIOB, GPIO_2)== 1 ) 
-    // {
-    //     GPIOD->ODR &= ~GPIO_ODR_OD11;
-    // } else {
-    //     GPIOD->ODR |= GPIO_ODR_OD11;
-    // }
-    
+	if(gpio_read(GPIOB, GPIO_2)== 1 )
+	{
+	 GPIOD->ODR &= ~GPIO_ODR_OD11;
+	} else {
+	 GPIOD->ODR |= GPIO_ODR_OD11;
+	}
+    GPIOD->ODR |= GPIO_ODR_OD13;
     //GPIOD->ODR ^= GPIO_ODR_OD12;
     if(start)
     {
@@ -123,19 +123,21 @@ void EXTI2_IRQHandler(void)
         //     switchPWM(TIM4, 1); //Start timer
         //     EXTI->PR |= EXTI_PR_PR2;
         // } else {
-        // 	if(lowDuration >= 6500 && lowDuration <= 7600) { //lowDuration tussen 815us en 950us
-        // 		lowDuration = 7112; //lowDuration is 889us
-        // 	}
-        //     lowDuration = 6480;
-            TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
-            TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
-            //NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
-            EXTI->IMR &= 0<<0; //Disable this interrupt
-            NVIC_DisableIRQ(EXTI2_IRQn);
-            start = true;  //Reset start flag
-            //GPIOD->ODR &= ~GPIO_ODR_OD14;
-            NVIC_EnableIRQ(TIM4_IRQn);
-            switchPWM(TIM4, 1); //Start timer TIM4
+		if(lowDuration >= 6000 && lowDuration <= 8100) { //lowDuration tussen 815us en 950us
+			lowDuration = 7112; //lowDuration is 889us
+		} else {
+			lowDuration = 7112;
+		}
+		//     lowDuration = 6480;
+		TIM4->DIER |= TIM_DIER_UIE;  // Enable TIM4 update interrupt
+		TIM4->ARR = lowDuration * 1.1;  //Auto reload is 3/4 bitTime
+		//NVIC_DisableIRQ(EXTI0_IRQn);  //Disable this interrupt
+		EXTI->IMR &= 0<<0; //Disable this interrupt
+		NVIC_DisableIRQ(EXTI2_IRQn);
+		start = true;  //Reset start flag
+		//GPIOD->ODR &= ~GPIO_ODR_OD14;
+		NVIC_EnableIRQ(TIM4_IRQn);
+		switchPWM(TIM4, 1); //Start timer TIM4
         // }
     }
 
@@ -188,8 +190,17 @@ void TIM4_IRQHandler(void)
 {
     //DEBUGLOG("Got to TIM4 interrupt\r\n");
     //GPIOD->ODR |= GPIO_ODR_OD11;
-    //GPIOD->ODR |= GPIO_ODR_OD13;
-    
+	if(bitIndex > messageLength) {
+		bitIndex = 0;
+	}
+    GPIOD->ODR ^= GPIO_ODR_OD14;
+	if(gpio_read(GPIOB, GPIO_2)== 1 )
+	{
+		GPIOD->ODR &= ~GPIO_ODR_OD11;
+	} else {
+		GPIOD->ODR |= GPIO_ODR_OD11;
+	}
+
     if(bitStart)
     {
         TIM4->ARR = lowDuration;// * 2; //Was 1*bit time, now 0.5 to control bits
@@ -199,24 +210,28 @@ void TIM4_IRQHandler(void)
 
         if(control != gpio_read(GPIOB, GPIO_2))//Check if bit is valid
         {
-            GPIOD->ODR ^= GPIO_ODR_OD11;
+            GPIOD->ODR ^= GPIO_ODR_OD12;
             message[bitIndex] = gpio_read(GPIOB, GPIO_2); //Invert data
         }else{
-            // DEBUGLOG("Invalid bit\r\n");
-            // // for(int i = 0; i < 400000; i++)
-            // // {}
-            // bitIndex = 0;
-            // reset();
             invalidFlag = true;
         }
-
         bitIndex++;
         bitStart = true;
-        if(bitIndex == messageLength) 
+        if(bitIndex >= messageLength)
         {
             if(!invalidFlag)
             {
-                reset();
+//            	GPIOD->ODR ^= GPIO_ODR_OD9;
+            	invalidFlag = false;
+				receivedIR = 0;
+				bitIndex = 0;
+				switchPWM(TIM4, 0); //Stop timer
+				GPIOD->ODR &= ~GPIO_ODR_OD13;
+				EXTI->IMR |= 1<<2; //Enable EXTI interrupt
+				NVIC_EnableIRQ(EXTI2_IRQn);
+				TIM4->CNT = 0;
+				TIM4->ARR = 65000;
+				TIM4->DIER &= TIM_DIER_UIE;  //Disable timer interrupt
                 return;
             }
             bitIndex = 0;
@@ -224,36 +239,27 @@ void TIM4_IRQHandler(void)
             {
                 receivedIR = receivedIR << 1;
                 receivedIR |= message[i];
-                uint8_t x =message[i]; 
-                DEBUGLOG("%d", x);
+                uint8_t x = message[i];
             }
-            DEBUGLOG("\n");
-            //DEBUGLOG("\r\n");
             receiveFlag = true;
 
-            unsigned int receivedID = (receivedIR & 0b11110000) >> 4; //extract bit 7-4
-            unsigned int receivedMessage = receivedIR & 0b1111; //Extract last 4 bits
-            // DEBUGLOG("LowDuration: %d", lowDuration);
-            // DEBUGLOG(" Received ID: %d", receivedID);
-            //DEBUGLOG(" Received: %d, %d \r\n",receivedID, receivedMessage);
-
-            /* ID check uitgecomment tijdens testen*/
-            // if(validID(receivedID)) //Checking if received ID is valid
-            // {
-            //     DEBUGLOG("Valid ID");
-            // }else{
-            //     DEBUGLOG("Invalid ID");
-            // }
-
-            /* Message check uitgecomment tijdens testen*/
-            // if(validMessage(receivedMessage)) //Checking if received message is valid
-            // {
-            //     DEBUGLOG("Valid message");
-            // }else{
-            //     DEBUGLOG("Invalid message");
-            // }
-
-            reset();
+            unsigned int receivedID = (receivedIR>>1 & 0b11110000) >> 4; //extract bit 7-4
+            unsigned int receivedMessage = (receivedIR>>1 & 0b1111); //Extract last 4 bits
+            if((receivedID == 8) && (receivedMessage == 3)) {
+            	GPIOD->ODR |= GPIO_ODR_OD9;
+            } else {
+            	GPIOD->ODR &= ~(GPIO_ODR_OD9);
+            }
+            invalidFlag = false;
+			receivedIR = 0;
+			bitIndex = 0;
+			switchPWM(TIM4, 0); //Stop timer
+			GPIOD->ODR &= ~GPIO_ODR_OD13;
+			EXTI->IMR |= 1<<2; //Enable EXTI interrupt
+			NVIC_EnableIRQ(EXTI2_IRQn);
+			TIM4->CNT = 0;
+			TIM4->ARR = 65000;
+			TIM4->DIER &= TIM_DIER_UIE;  //Disable timer interrupt
         }
     }
     //GPIOD->ODR &= ~GPIO_ODR_OD11;
