@@ -6,6 +6,10 @@
 #include "pwm.h"
 #include <stdbool.h>
 
+#include "fonts.h"
+#include "ssd1306.h"
+#include "user_interface.h"
+
 #define messageLength 13
 #define DEBUG
 
@@ -193,7 +197,7 @@ void TIM4_IRQHandler(void)
 	if(bitIndex > messageLength) {
 		bitIndex = 0;
 	}
-    GPIOD->ODR ^= GPIO_ODR_OD14;
+    //GPIOD->ODR ^= ;
 	if(gpio_read(GPIOB, GPIO_2)== 1 )
 	{
 		GPIOD->ODR &= ~GPIO_ODR_OD11;
@@ -260,8 +264,35 @@ void TIM4_IRQHandler(void)
 			TIM4->CNT = 0;
 			TIM4->ARR = 65000;
 			TIM4->DIER &= TIM_DIER_UIE;  //Disable timer interrupt
+
+	    	/* Clear screen */
+	    	SSD1306_Fill(SSD1306_COLOR_BLACK); // make the screen black
+
+	    	char temp_string[9];
+
+	    	char ID_string[9];
+	    	strcpy (ID_string, "ID = ");
+	    	itoa(receivedID, temp_string, 10);
+	    	strcat(ID_string, temp_string);
+
+	    	char message_string[9];
+	    	strcpy (message_string, "msg = ");
+	    	itoa(receivedMessage, temp_string, 10);
+	    	strcat(message_string, temp_string);
+
+	    	SSD1306_GotoXY (0, 0);
+	    	SSD1306_Puts (ID_string, &Font_16x26, 1);
+
+	    	SSD1306_GotoXY (0, 35);
+	    	SSD1306_Puts (message_string, &Font_16x26, 1);
+
+	    	/* Update screen */
+	    	SSD1306_UpdateScreen(); // actually display the black screen
+
         }
     }
+
+
     //GPIOD->ODR &= ~GPIO_ODR_OD11;
     TIM4->SR &= ~TIM_SR_UIF;
 }
