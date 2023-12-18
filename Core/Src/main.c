@@ -9,6 +9,10 @@
 #include "interrupts.h"
 #include "IR.h"
 
+#include "fonts.h"
+#include "ssd1306.h"
+#include "user_interface.h"
+
 #define Address  1 //Address tussen 0 en 32
 
 #ifdef SEMIHOSTING
@@ -46,11 +50,42 @@ int main(void)
     // Turn all LEDs Off
     GPIOD->ODR &= ~(GPIO_ODR_OD12 | GPIO_ODR_OD14 | GPIO_ODR_OD11 | GPIO_ODR_OD13 | GPIO_ODR_OD9);
 
+
+    //init GPIO for I2c
+    //init OLED/I2C
+
     receive();
     // uint8_t PD13 = 0;
     while(1)
     {
         __WFI();
+        unsigned int receivedID = (receivedIR>>1 & 0b11110000) >> 4; //extract bit 7-4
+        unsigned int receivedMessage = (receivedIR>>1 & 0b1111); //Extract last 4 bits
+
+    	/* Clear screen */
+    	SSD1306_Fill(SSD1306_COLOR_BLACK); // make the screen black
+
+    	char temp_string[9];
+
+    	char ID_string[9];
+    	strcpy (ID_string, "ID = ");
+    	itoa(receivedID, temp_string, 10);
+    	strcat(ID_string, temp_string);
+
+    	char message_string[9];
+    	strcpy (message_string, "msg = ");
+    	itoa(receivedMessage, temp_string, 10);
+    	strcat(message_string, temp_string);
+
+    	SSD1306_GotoXY (0, 28);
+    	SSD1306_Puts (ID_string, &Font_16x26, 1);
+
+    	SSD1306_GotoXY (0, 99);
+    	SSD1306_Puts (ID_string, &Font_16x26, 1);
+
+    	/* Update screen */
+    	SSD1306_UpdateScreen(); // actually display the black screen
+
 
     }
 }
